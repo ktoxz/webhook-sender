@@ -1,0 +1,5 @@
+name: KtoxzWebhook
+main: dev.ktoxz.webhooksender.WebhookSender
+version: 1.1
+api-version: 1.20
+author: ktoxz
