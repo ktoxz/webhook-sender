@@ -20,6 +20,8 @@ public class ChestListener implements Listener {
 
     @EventHandler
     public void onChestPut(InventoryClickEvent e) {
+    	plugin.getLogger().info("TouchAndPut");
+    	plugin.getLogger().info(e.toString());
         if (!(e.getWhoClicked() instanceof Player)) return;
         if (!(e.getClickedInventory().getHolder() instanceof Chest chest)) return;
 
