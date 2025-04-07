@@ -1,4 +1,4 @@
-package dev.ktoxz.webhooksender;
+package dev.ktoxz.manager;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -11,30 +11,18 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class WebhookSender extends JavaPlugin implements Listener {
+public class WebhookManager extends JavaPlugin implements Listener {
 
     private static final String WEBHOOK_URL = "https://discord.com/api/webhooks/PASTE_YOUR_WEBHOOK_HERE";
-
-    @Override
-    public void onEnable() {
-        Bukkit.getPluginManager().registerEvents(this, this);
-        getLogger().info("WebhookSender enabled!");
+    
+    private static WebhookManager ins;
+    
+    public static WebhookManager getInstance() {
+    	if(ins == null) ins = new WebhookManager();
+    	return ins;
     }
-
-    @EventHandler
-    public void onChestOpen(InventoryOpenEvent event) {
-    	if (event.getInventory().getType() == InventoryType.CHEST &&
-    		    event.getInventory().getLocation() != null &&
-    		    event.getInventory().getLocation().getBlockX() == 363 &&
-    		    event.getInventory().getLocation().getBlockY() == 66 &&
-    		    event.getInventory().getLocation().getBlockZ() == 280) {
-            String playerName = event.getPlayer().getName();
-            String message = "\uD83D\uDCE6 " + playerName + " vừa mở rương trung tâm!";
-            sendWebhook(message);
-        }
-    }
-
-    private void sendWebhook(String content) {
+    
+    public void sendWebhook(String content) {
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             try {
                 URL url = new URL(WEBHOOK_URL);
