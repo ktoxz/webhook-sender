@@ -4,6 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -11,7 +12,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import dev.ktoxz.commands.Constant;
 import dev.ktoxz.manager.WebhookManager;
-public class SetCentralChest extends JavaPlugin implements Listener {
+public class SetCentralChest extends JavaPlugin implements CommandExecutor {
 	
 	
 	
