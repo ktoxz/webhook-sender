@@ -13,7 +13,7 @@ import java.net.URL;
 
 public class WebhookManager extends JavaPlugin implements Listener {
 
-    private static final String WEBHOOK_URL = "https://discord.com/api/webhooks/PASTE_YOUR_WEBHOOK_HERE";
+    private static final String WEBHOOK_URL = "https://discord.com/api/webhooks/1357654266768265247/opzaEhNzCcYfiMOB4TUtxGCV9fkjC4ruUbxoZp9NTa1CCOtprylIvdRZHl21e5pf5TZS";
     
     private static WebhookManager ins;
     

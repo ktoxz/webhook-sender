@@ -28,6 +28,7 @@ public class CentralChestActivity extends JavaPlugin implements Listener {
     	if (ChestBoolean.isCentralChest(event)) {
             String playerName = event.getPlayer().getName();
             String message = "\uD83D\uDCE6 " + playerName + " vừa mở rương trung tâm!";
+            
             WebhookManager.getInstance().sendWebhook(message);
         }
     }
