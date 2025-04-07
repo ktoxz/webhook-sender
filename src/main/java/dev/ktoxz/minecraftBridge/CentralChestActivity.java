@@ -17,11 +17,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import dev.ktoxz.commands.Constant;
+import dev.ktoxz.commands.SetCentralChest;
 
 public class CentralChestActivity extends JavaPlugin implements Listener {
 	@Override
     public void onEnable() {
         Bukkit.getPluginManager().registerEvents(this, this);
+        getCommand("setcentralchest").setExecutor(new SetCentralChest());
         getLogger().info("WebhookSender enabled!");
     }
 
@@ -40,7 +42,6 @@ public class CentralChestActivity extends JavaPlugin implements Listener {
         if (e.getClickedInventory().getHolder() instanceof Chest chest) {
             Location loc = chest.getLocation();
             if (loc.equals(Constant.get(Constant.CONSTANT.CENTRAL_CHEST_POS))) {
-                // Người chơi shift-click bỏ item vào rương
                 ItemStack item = e.getCurrentItem();
                 if (item != null && item.getType() != Material.AIR) {
                     String player = e.getWhoClicked().getName();
