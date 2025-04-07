@@ -18,10 +18,14 @@ public class SetCentralChest extends JavaPlugin implements CommandExecutor {
 	
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+		System.out.println("Hello, đang dùng tui hẻ");
 	    if (label.equalsIgnoreCase("setcentralchest")) {
+			System.out.println("Break 1 nè");
 	        if (sender instanceof Player player) {
+	    		System.out.println("Break 2 nè");
 	            Block block = player.getTargetBlockExact(5);
 	            if (block != null && block.getType() == Material.CHEST) {
+	            	System.out.println("Break 3 nè");
 	                Location loc = block.getLocation();
 	                getConfig().set("centralChest.world", loc.getWorld().getName());
 	                getConfig().set("centralChest.x", loc.getBlockX());
@@ -30,6 +34,7 @@ public class SetCentralChest extends JavaPlugin implements CommandExecutor {
 	                saveConfig();
 	                Constant.set(Constant.CONSTANT.CENTRAL_CHEST_POS, loc);
 	                player.sendMessage("§a✔ Rương trung tâm đã được đặt tại: " + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ());
+	                
 	                WebhookManager.getInstance().sendWebhook("Rương trung tâm đã được đặt tại: \" + loc.getBlockX() + \", \" + loc.getBlockY() + \", \" + loc.getBlockZ()");
 	            } else {
 	                player.sendMessage("§c✖ Bạn phải nhìn vào một cái rương để dùng lệnh này.");
