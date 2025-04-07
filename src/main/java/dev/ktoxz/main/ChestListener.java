@@ -20,10 +20,29 @@ public class ChestListener implements Listener {
 
     @EventHandler
     public void onChestPut(InventoryClickEvent e) {
-    	plugin.getLogger().info("TouchAndPut");
-    	plugin.getLogger().info(e.toString());
-        if (!(e.getWhoClicked() instanceof Player)) return;
-        if (!(e.getClickedInventory().getHolder() instanceof Chest chest)) return;
+    	plugin.getLogger().info("📦 InventoryClickEvent: " + e.toString());
+
+        if (!(e.getWhoClicked() instanceof Player player)) {
+            plugin.getLogger().info("❌ Người click không phải Player.");
+            return;
+        }
+
+        plugin.getLogger().info("👤 Người click: " + player.getName());
+
+        if (e.getClickedInventory() == null) {
+            plugin.getLogger().info("❌ Clicked inventory là null.");
+            return;
+        }
+
+        plugin.getLogger().info("📁 Loại inventory: " + e.getClickedInventory().getType());
+
+        if (!(e.getClickedInventory().getHolder() instanceof Chest chest)) {
+            plugin.getLogger().info("❌ Inventory không phải là Chest.");
+            plugin.getLogger().info("📌 Holder class: " + e.getClickedInventory().getHolder());
+            return;
+        }
+        plugin.getLogger().info("✅ Đã tương tác với chest tại: " + chest.getLocation());
+
 
         Map<String, Object> locMap = plugin.getConfig().getConfigurationSection("central-chest").getValues(false);
         Location central = Location.deserialize(locMap);
