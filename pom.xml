@@ -5,11 +5,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>dev.ktoxz</groupId>
-  <artifactId>WebhookSender</artifactId>
-  <version>1.0</version>
+  <artifactId>KtoxzWebhook</artifactId>
+  <version>1.2</version>
   <packaging>jar</packaging>
 
-  <name>WebhookSender</name>
+  <name>KtoxzWebhook</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
