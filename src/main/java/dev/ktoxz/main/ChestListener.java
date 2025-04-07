@@ -52,7 +52,7 @@ public class ChestListener implements Listener {
         var item = e.getCurrentItem();
         if (item == null || item.getType() == Material.AIR) return;
 
-        String player = e.getWhoClicked().getName();
-        plugin.getLogger().info("📥 " + player + " gửi " + item.getAmount() + " " + item.getType() + " vào rương trung tâm.");
+        String playerName = e.getWhoClicked().getName();
+        plugin.getLogger().info("📥 " + playerName + " gửi " + item.getAmount() + " " + item.getType() + " vào rương trung tâm.");
     }
 }
