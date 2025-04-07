@@ -1,11 +1,15 @@
 package dev.ktoxz.main;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
-import org.bukkit.event.*;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
 import java.util.Map;
@@ -20,39 +24,36 @@ public class ChestListener implements Listener {
 
     @EventHandler
     public void onChestPut(InventoryClickEvent e) {
-    	plugin.getLogger().info("📦 InventoryClickEvent: " + e.toString());
+        // ✅ Chỉ xử lý nếu là Player
+        if (!(e.getWhoClicked() instanceof Player player)) return;
 
-        if (!(e.getWhoClicked() instanceof Player player)) {
-            plugin.getLogger().info("❌ Người click không phải Player.");
+        // ✅ Lấy inventory phía trên (rương đang mở)
+        Inventory topInventory = e.getView().getTopInventory();
+        if (!(topInventory.getHolder() instanceof Chest chest)) return;
+
+        // ✅ Kiểm tra config có lưu rương trung tâm không
+        if (!plugin.getConfig().isConfigurationSection("central-chest")) {
+            plugin.getLogger().warning("⚠ Rương trung tâm chưa được đặt.");
             return;
         }
 
-        plugin.getLogger().info("👤 Người click: " + player.getName());
-
-        if (e.getClickedInventory() == null) {
-            plugin.getLogger().info("❌ Clicked inventory là null.");
-            return;
-        }
-
-        plugin.getLogger().info("📁 Loại inventory: " + e.getClickedInventory().getType());
-
-        if (!(e.getClickedInventory().getHolder() instanceof Chest chest)) {
-            plugin.getLogger().info("❌ Inventory không phải là Chest.");
-            plugin.getLogger().info("📌 Holder class: " + e.getClickedInventory().getHolder());
-            return;
-        }
-        plugin.getLogger().info("✅ Đã tương tác với chest tại: " + chest.getLocation());
-
-
+        // ✅ Lấy vị trí rương trung tâm từ config
         Map<String, Object> locMap = plugin.getConfig().getConfigurationSection("central-chest").getValues(false);
-        Location central = Location.deserialize(locMap);
+        Location centralChestLoc = Location.deserialize(locMap);
 
-        if (!chest.getLocation().equals(central)) return;
+        // ✅ So sánh vị trí rương
+        if (!chest.getLocation().equals(centralChestLoc)) {
+            plugin.getLogger().info("📦 Rương không phải rương trung tâm.");
+            return;
+        }
 
-        var item = e.getCurrentItem();
+        // ✅ Kiểm tra item được click
+        ItemStack item = e.getCurrentItem();
         if (item == null || item.getType() == Material.AIR) return;
 
-        String playerName = e.getWhoClicked().getName();
-        plugin.getLogger().info("📥 " + playerName + " gửi " + item.getAmount() + " " + item.getType() + " vào rương trung tâm.");
+        // ✅ Chỉ log nếu player click vào rương (không phải inventory của mình)
+        if (e.getClickedInventory() == topInventory) {
+            plugin.getLogger().info("📥 " + player.getName() + " gửi " + item.getAmount() + " " + item.getType() + " vào rương trung tâm.");
+        }
     }
 }
