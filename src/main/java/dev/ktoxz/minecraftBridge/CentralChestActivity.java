@@ -13,11 +13,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import dev.ktoxz.manager.WebhookManager;
 import dev.ktoxz.commands.Constant;
 
 public class CentralChestActivity extends JavaPlugin implements Listener {
@@ -32,15 +30,13 @@ public class CentralChestActivity extends JavaPlugin implements Listener {
     	if (ChestBoolean.isCentralChest(event)) {
             String playerName = event.getPlayer().getName();
             String message = "\uD83D\uDCE6 " + playerName + " vừa mở rương trung tâm!";
-            
+            getLogger().info(playerName + "click the central chest");
             sendWebhook(message);
         }
     }
     
     @EventHandler
     public void onChestPut(InventoryClickEvent e) {
-        if (!(e.getWhoClicked() instanceof Player)) return;
-        if (e.getClickedInventory() == null) return;
         if (e.getClickedInventory().getHolder() instanceof Chest chest) {
             Location loc = chest.getLocation();
             if (loc.equals(Constant.get(Constant.CONSTANT.CENTRAL_CHEST_POS))) {
@@ -56,14 +52,8 @@ public class CentralChestActivity extends JavaPlugin implements Listener {
         }
     }
     
-private static final String WEBHOOK_URL = "https://discord.com/api/webhooks/1357654266768265247/opzaEhNzCcYfiMOB4TUtxGCV9fkjC4ruUbxoZp9NTa1CCOtprylIvdRZHl21e5pf5TZS";
+    private static final String WEBHOOK_URL = "https://discord.com/api/webhooks/1357654266768265247/opzaEhNzCcYfiMOB4TUtxGCV9fkjC4ruUbxoZp9NTa1CCOtprylIvdRZHl21e5pf5TZS";
     
-    private static WebhookManager ins;
-    
-    public static WebhookManager getInstance() {
-    	if(ins == null) ins = new WebhookManager();
-    	return ins;
-    }
     
     public void sendWebhook(String content) {
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {

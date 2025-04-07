@@ -35,10 +35,10 @@ public class SetCentralChest extends JavaPlugin implements CommandExecutor {
 	                Constant.set(Constant.CONSTANT.CENTRAL_CHEST_POS, loc);
 	                player.sendMessage("§a✔ Rương trung tâm đã được đặt tại: " + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ());
 	                
-	                WebhookManager.getInstance().sendWebhook("Rương trung tâm đã được đặt tại: \" + loc.getBlockX() + \", \" + loc.getBlockY() + \", \" + loc.getBlockZ()");
+	                //WebhookManager.getInstance().sendWebhook("Rương trung tâm đã được đặt tại: \" + loc.getBlockX() + \", \" + loc.getBlockY() + \", \" + loc.getBlockZ()");
 	            } else {
 	                player.sendMessage("§c✖ Bạn phải nhìn vào một cái rương để dùng lệnh này.");
-	                WebhookManager.getInstance().sendWebhook("Bạn phải nhìn vào một cái rương để dùng lệnh này.");
+	                //WebhookManager.getInstance().sendWebhook("Bạn phải nhìn vào một cái rương để dùng lệnh này.");
 	            }
 	            return true;
 	        }
