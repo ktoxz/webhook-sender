@@ -14,10 +14,16 @@ import dev.ktoxz.commands.Constant;
 import dev.ktoxz.manager.WebhookManager;
 public class SetCentralChest extends JavaPlugin implements CommandExecutor {
 	
+    private final JavaPlugin plugin;
+
+    public SetCentralChest(JavaPlugin plugin) {
+        this.plugin = plugin;
+    }
 	
 	
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+		plugin.getLogger().info("✅ Lệnh /setcentralchest đã được gọi");
 		System.out.println("Hello, đang dùng tui hẻ");
 	    if (label.equalsIgnoreCase("setcentralchest")) {
 			System.out.println("Break 1 nè");

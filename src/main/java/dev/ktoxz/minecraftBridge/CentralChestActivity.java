@@ -22,8 +22,8 @@ import dev.ktoxz.commands.SetCentralChest;
 public class CentralChestActivity extends JavaPlugin implements Listener {
 	@Override
     public void onEnable() {
+        getCommand("setcentralchest").setExecutor(new SetCentralChest(this));
         Bukkit.getPluginManager().registerEvents(this, this);
-        getCommand("setcentralchest").setExecutor(new SetCentralChest());
         getLogger().info("WebhookSender enabled!");
     }
 
