@@ -8,6 +8,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
@@ -16,7 +17,7 @@ import java.util.Map;
 public class ChestListener implements Listener {
 
     private final Plugin plugin;
-    private boolean isCentralChestOpen = false;
+    private Player chestOwner = null;
 
     public ChestListener(Plugin plugin) {
         this.plugin = plugin;
@@ -36,38 +37,53 @@ public class ChestListener implements Listener {
         Location central = getCentralChestLocation();
         if (central == null || !loc.equals(central)) return;
 
-        if (isCentralChestOpen) {
-            e.getPlayer().closeInventory();
-            e.getPlayer().sendMessage("§c❌ Có người đang mở rương trung tâm, vui lòng đợi...");
-            plugin.getLogger().info("🚫 " + e.getPlayer().getName() + " bị chặn vì rương trung tâm đang mở.");
-        } else {
-            isCentralChestOpen = true;
-            plugin.getLogger().info("✅ " + e.getPlayer().getName() + " đang mở rương trung tâm.");
+        Player player = (Player) e.getPlayer();
+
+        if (chestOwner != null && !chestOwner.equals(player)) {
+            player.closeInventory();
+            player.sendMessage("§c❌ Có người đang mở rương trung tâm, vui lòng đợi...");
+            plugin.getLogger().info("🚫 " + player.getName() + " bị chặn vì " + chestOwner.getName() + " đang mở.");
+            return;
         }
+
+        chestOwner = player;
+        plugin.getLogger().info("✅ " + player.getName() + " đang mở rương trung tâm.");
     }
 
     @EventHandler
     public void onChestClose(InventoryCloseEvent e) {
-    	if (isCentralChestOpen) {
-            e.getPlayer().sendMessage("§c❌ Có người đang mở rương trung tâm, vui lòng đợi nhé...");
-            return;
-    	}
         if (!(e.getInventory().getHolder() instanceof Chest chest)) return;
 
         Location loc = chest.getLocation();
         Location central = getCentralChestLocation();
         if (central == null || !loc.equals(central)) return;
 
-        plugin.getLogger().info("📦 " + e.getPlayer().getName() + " đã đóng rương trung tâm.");
+        Player player = (Player) e.getPlayer();
+
+        // Chỉ người mở mới được giải phóng quyền
+        if (!player.equals(chestOwner)) {
+            plugin.getLogger().info("ℹ️ " + player.getName() + " đóng rương nhưng không phải người mở chính.");
+            return;
+        }
+
+        plugin.getLogger().info("📦 " + player.getName() + " đã đóng rương trung tâm.");
 
         for (ItemStack item : e.getInventory().getContents()) {
             if (item != null && item.getType() != Material.AIR) {
                 plugin.getLogger().info("📥 Rương còn: " + item.getAmount() + " " + item.getType());
             }
         }
-        
+
         e.getInventory().clear();
-        isCentralChestOpen = false;
-        e.getPlayer().sendMessage("§7✅ Rương trung tâm đã đóng.");
+        chestOwner = null;
+        player.sendMessage("§7✅ Rương trung tâm đã đóng.");
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent e) {
+        if (chestOwner != null && chestOwner.equals(e.getPlayer())) {
+            plugin.getLogger().info("⚠️ " + e.getPlayer().getName() + " rời game khi đang mở rương. Reset quyền.");
+            chestOwner = null;
+        }
     }
 }
