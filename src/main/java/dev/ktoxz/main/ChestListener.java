@@ -1,5 +1,6 @@
 package dev.ktoxz.main;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Chest;
@@ -40,7 +41,7 @@ public class ChestListener implements Listener {
         Player player = (Player) e.getPlayer();
 
         if (chestOwner != null && !chestOwner.equals(player)) {
-            player.closeInventory();
+            Bukkit.getScheduler().runTask(plugin, player::closeInventory);
             player.sendMessage("§c❌ Có người đang mở rương trung tâm, vui lòng đợi...");
             plugin.getLogger().info("🚫 " + player.getName() + " bị chặn vì " + chestOwner.getName() + " đang mở.");
             return;
