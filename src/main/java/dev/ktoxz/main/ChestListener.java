@@ -9,6 +9,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
@@ -18,7 +19,7 @@ import java.util.Map;
 public class ChestListener implements Listener {
 
     private final Plugin plugin;
-
+    private Boolean isOpen = false;
     public ChestListener(Plugin plugin) {
         this.plugin = plugin;
     }
@@ -59,7 +60,21 @@ public class ChestListener implements Listener {
 //    }
     
     @EventHandler
+    public void onChestOpen(InventoryInteractEvent e) {
+    	if(isOpen) {
+        	plugin.getLogger().info(e.getWhoClicked().getName()+ " đang mở rương nhưng mà có người đang mở trước rồi");
+        	e.getWhoClicked().closeInventory();
+        	e.getWhoClicked().sendMessage("Có người đang mở, chờ xíu");
+    		return;
+    	}
+    	if(!(e.getInventory() instanceof Chest chest)) return;
+    	plugin.getLogger().info(e.getWhoClicked().getName()+ " đang mở rương");
+    	isOpen = true;
+    }
+    
+    @EventHandler
     public void onChestClose(InventoryCloseEvent e) {
+    	if(isOpen) return;
         if (!(e.getInventory().getHolder() instanceof Chest chest)) return;
 
         // Kiểm tra nếu là rương trung tâm
@@ -69,13 +84,18 @@ public class ChestListener implements Listener {
         if (!loc.equals(central)) return;
 
         plugin.getLogger().info("📦 " + e.getPlayer().getName() + " vừa đóng rương trung tâm.");
-
+        
         // Liệt kê item trong rương
         for (ItemStack item : e.getInventory().getContents()) {
             if (item != null && item.getType() != Material.AIR) {
                 plugin.getLogger().info("📥 Có " + item.getAmount() + " " + item.getType() + " trong rương.");
             }
         }
+        isOpen = false;
+        
+        
+        e.getPlayer().sendMessage("Đóng rồi");
+        e.getInventory().clear();
     }
 
 }
