@@ -41,8 +41,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.1</version>
         <configuration>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
+          <source>21</source>
+          <target>21</target>
         </configuration>
       </plugin>
 
@@ -50,7 +50,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.2.4</version>
+        <version>3.5.0</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -59,11 +59,16 @@
             </goals>
             <configuration>
               <relocations>
-                <relocation>
-                  <pattern>com.mongodb</pattern>
-                  <shadedPattern>dev.ktoxz.shaded.mongodb</shadedPattern>
-                </relocation>
-              </relocations>
+				  <relocation>
+				    <pattern>com.mongodb</pattern>
+				    <shadedPattern>dev.ktoxz.db.shaded.mongodb</shadedPattern>
+				  </relocation>
+				  <relocation>
+				    <pattern>org.bson</pattern>
+				    <shadedPattern>dev.ktoxz.db.shaded.bson</shadedPattern>
+				  </relocation>
+				</relocations>
+
             </configuration>
           </execution>
         </executions>
