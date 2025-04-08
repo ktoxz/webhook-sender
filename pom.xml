@@ -27,11 +27,12 @@
     </dependency>
 
     <!-- MongoDB driver -->
-    <dependency>
-      <groupId>org.mongodb</groupId>
-      <artifactId>mongodb-driver-sync</artifactId>
-      <version>${mongodb-driver-sync.version}</version>
-    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync -->
+	<dependency>
+	    <groupId>org.mongodb</groupId>
+	    <artifactId>mongodb-driver-sync</artifactId>
+	    <version>5.4.0</version>
+	</dependency>
   </dependencies>
 
   <build>
