@@ -49,7 +49,7 @@ public class ChestListener implements Listener {
     @EventHandler
     public void onChestClose(InventoryCloseEvent e) {
     	if (isCentralChestOpen) {
-            e.getPlayer().sendMessage("§c❌ Có người đang mở rương trung tâm, vui lòng đợi...");
+            e.getPlayer().sendMessage("§c❌ Có người đang mở rương trung tâm, vui lòng đợi nhé...");
             return;
     	}
         if (!(e.getInventory().getHolder() instanceof Chest chest)) return;
@@ -58,7 +58,6 @@ public class ChestListener implements Listener {
         Location central = getCentralChestLocation();
         if (central == null || !loc.equals(central)) return;
 
-        isCentralChestOpen = false;
         plugin.getLogger().info("📦 " + e.getPlayer().getName() + " đã đóng rương trung tâm.");
 
         for (ItemStack item : e.getInventory().getContents()) {
@@ -68,7 +67,7 @@ public class ChestListener implements Listener {
         }
         
         e.getInventory().clear();
-
+        isCentralChestOpen = false;
         e.getPlayer().sendMessage("§7✅ Rương trung tâm đã đóng.");
     }
 }
