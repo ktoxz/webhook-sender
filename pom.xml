@@ -13,31 +13,30 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <java.version>21</java.version> <!-- Đổi nếu ông dùng Java 21 -->
-    <!-- MongoDB version -->
-    <mongodb-driver-sync.version>4.7.0</mongodb-driver-sync.version>
-    <mongodb-crypt.version>4.7.0</mongodb-crypt.version>
-    <logback-classic.version>1.4.5</logback-classic.version>
+    <java.version>21</java.version>
+    <mongodb-driver-sync.version>4.11.0</mongodb-driver-sync.version>
   </properties>
 
   <dependencies>
+    <!-- Spigot API -->
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
       <version>1.20.1-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
-    <!-- MongoDB Dependency -->
+
+    <!-- MongoDB driver -->
     <dependency>
-        <groupId>org.mongodb</groupId>
-        <artifactId>mongodb-driver-sync</artifactId>
-        <version>4.7.0</version>
+      <groupId>org.mongodb</groupId>
+      <artifactId>mongodb-driver-sync</artifactId>
+      <version>${mongodb-driver-sync.version}</version>
     </dependency>
-    
   </dependencies>
 
   <build>
     <plugins>
+      <!-- Java compiler -->
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.1</version>
@@ -46,14 +45,39 @@
           <target>${java.version}</target>
         </configuration>
       </plugin>
+
+      <!-- Shade plugin để đóng gói MongoDB vào jar -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.2.4</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <relocations>
+                <relocation>
+                  <pattern>com.mongodb</pattern>
+                  <shadedPattern>dev.ktoxz.shaded.mongodb</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
+
+    <!-- plugin.yml -->
     <resources>
-        <resource>
-            <directory>src/main/resources</directory>
-            <includes>
-                <include>plugin.yml</include>
-            </includes>
-        </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>plugin.yml</include>
+        </includes>
+      </resource>
     </resources>
   </build>
 
@@ -64,5 +88,3 @@
     </repository>
   </repositories>
 </project>
-
-
