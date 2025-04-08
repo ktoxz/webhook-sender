@@ -1,5 +1,6 @@
-package dev.ktoxz.main;
+package dev.ktoxz.listener;
 
+import org.bson.Document;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -13,6 +14,10 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
+import dev.ktoxz.manager.TransactionManager;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class ChestListener implements Listener {
@@ -68,13 +73,26 @@ public class ChestListener implements Listener {
         }
 
         plugin.getLogger().info("📦 " + player.getName() + " đã đóng rương trung tâm.");
-
+        List<Document> itemList = new ArrayList<>();
         for (ItemStack item : e.getInventory().getContents()) {
             if (item != null && item.getType() != Material.AIR) {
                 plugin.getLogger().info("📥 Rương còn: " + item.getAmount() + " " + item.getType());
+                Document itemDoc = new Document()
+                        .append("item", item.getType().name())
+                        .append("quantity", item.getAmount())
+                        .append("price", 0);
+                    itemList.add(itemDoc);
             }
         }
 
+        
+        int reCode = TransactionManager.insertTransaction(itemList, player);
+        if(reCode == 1) {
+        	plugin.getLogger().info("Thêm transaction mới thành công");
+        } else if(reCode == -1) {
+        	plugin.getLogger().warning("Không có gì để thêm");
+
+        }
         e.getInventory().clear();
         chestOwner = null;
         player.sendMessage("§7✅ Rương trung tâm đã đóng.");

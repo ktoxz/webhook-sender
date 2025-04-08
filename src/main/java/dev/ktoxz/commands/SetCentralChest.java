@@ -1,10 +1,12 @@
-package dev.ktoxz.main;
+package dev.ktoxz.commands;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
+
+import dev.ktoxz.main.KtoxzWebhook;
 
 public class SetCentralChest implements CommandExecutor {
 
