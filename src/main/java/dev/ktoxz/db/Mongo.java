@@ -1,5 +1,7 @@
 package dev.ktoxz.db;
 
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.FindIterable;
 
@@ -48,9 +50,14 @@ public class Mongo {
     public boolean Connect() {
         if (isConnected) return true;
 
-        String connectionString = "mongodb://thanhkhoi448:mongo123@ac-mozrfmu-shard-00-00.ehgjc1m.mongodb.net:27017,ac-mozrfmu-shard-00-01.ehgjc1m.mongodb.net:27017,ac-mozrfmu-shard-00-02.ehgjc1m.mongodb.net:27017/?replicaSet=atlas-9om431-shard-0&ssl=true&authSource=admin&retryWrites=true&w=majority&appName=DiscordMinecraftOwO";
+        ConnectionString connectionString = new ConnectionString("mongodb://thanhkhoi448:mongo123@ac-mozrfmu-shard-00-00.ehgjc1m.mongodb.net:27017,ac-mozrfmu-shard-00-01.ehgjc1m.mongodb.net:27017,ac-mozrfmu-shard-00-02.ehgjc1m.mongodb.net:27017/?replicaSet=atlas-9om431-shard-0&ssl=true&authSource=admin&retryWrites=true&w=majority&appName=DiscordMinecraftOwO");
         try {
-            mongoClient = MongoClients.create(connectionString);
+        	MongoClientSettings settings = MongoClientSettings.builder()
+        	    .applyConnectionString(connectionString)
+        	    .applyToSslSettings(ssl -> ssl.enabled(true).invalidHostNameAllowed(true)) // ⚠️ Bỏ kiểm tra hostname
+        	    .build();
+
+        	mongoClient = MongoClients.create(settings);
             Document pingCommand = new Document("ping", 1);
             Document response = mongoClient.getDatabase("admin").runCommand(pingCommand);
             isConnected = response.get("ok", Number.class).intValue() == 1;
