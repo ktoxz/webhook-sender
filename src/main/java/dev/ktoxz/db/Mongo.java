@@ -48,7 +48,7 @@ public class Mongo {
     public boolean Connect() {
         if (isConnected) return true;
 
-        String connectionString = "mongodb+srv://thanhkhoi448:mongo123@discordminecraftowo.ehgjc1m.mongodb.net/?retryWrites=true&w=majority&appName=DiscordMinecraftOwO";
+        String connectionString = "mongodb://thanhkhoi448:mongo123@ac-mozrfmu-shard-00-00.ehgjc1m.mongodb.net:27017,ac-mozrfmu-shard-00-01.ehgjc1m.mongodb.net:27017,ac-mozrfmu-shard-00-02.ehgjc1m.mongodb.net:27017/?replicaSet=atlas-9om431-shard-0&ssl=true&authSource=admin&retryWrites=true&w=majority&appName=DiscordMinecraftOwO";
         try {
             mongoClient = MongoClients.create(connectionString);
             Document pingCommand = new Document("ping", 1);
