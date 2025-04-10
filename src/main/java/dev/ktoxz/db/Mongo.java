@@ -96,17 +96,12 @@ public class Mongo {
     }
 
     // Insert
-    public void Insert(MongoCollection<Document> col, List<Document> lDoc) {
-        try {
-            if (lDoc == null || lDoc.isEmpty()) return;
-            if (lDoc.size() == 1) {
-                col.insertOne(lDoc.get(0));
-            } else {
-                col.insertMany(lDoc, new InsertManyOptions().ordered(false));
-            }
-        } catch (Exception e) {
-            System.err.println("❌ Error during insert: " + e.getMessage());
-            e.printStackTrace();
+    public void Insert(MongoCollection<Document> col, List<Document> lDoc) throws Exception {
+    	if (lDoc == null || lDoc.isEmpty()) return;
+        if (lDoc.size() == 1) {
+            col.insertOne(lDoc.get(0));
+        } else {
+            col.insertMany(lDoc, new InsertManyOptions().ordered(false));
         }
     }
 

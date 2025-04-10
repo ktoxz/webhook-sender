@@ -28,7 +28,7 @@ public class MongoUpdate {
         }
     }
 
-    public boolean Update(Object filter, Object update) {
+    public boolean Update(Document filter, Document update) {
         try {
         	List<Document> filterList;
             if (filter instanceof Document) {

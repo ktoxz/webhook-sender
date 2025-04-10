@@ -1,10 +1,45 @@
 name: KtoxzWebhook
 main: dev.ktoxz.main.KtoxzWebhook
-version: 1.2
+version: 1.2.2
 api-version: 1.20
 author: ktoxz
+
 commands:
   setcentralchest:
     description: Đặt vị trí rương trung tâm
     usage: /setcentralchest
-    permission: webhook.setchest
+    permission: ktoxz.setcentralchest
+    permission-message: Bạn không có quyền sử dụng lệnh này!
+
+  tp:
+    description: Teleport đến địa điểm đã định trước
+    usage: /tp <spawn|home|minigame|name>
+
+  addspot:
+    description: Thêm vị trí
+    usage: /addspot <name>
+    permission: ktoxz.addspot
+    permission-message: Bạn không có quyền sử dụng lệnh này!
+
+  balance:
+    description: Xem số dư còn lại
+    usage: /balance
+
+  givebalance:
+    description: Gửi tiền cho người khác
+    usage: /givebalance <name> <sodu>
+    permission: ktoxz.givebalance
+    permission-message: Bạn không có quyền sử dụng lệnh này!
+
+permissions:
+  ktoxz.setcentralchest:
+    description: Cho phép đặt rương trung tâm
+    default: op
+
+  ktoxz.addspot:
+    description: Cho phép thêm vị trí mới
+    default: op
+
+  ktoxz.givebalance:
+    description: Cho phép gửi tiền cho người khác
+    default: op

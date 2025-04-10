@@ -27,11 +27,11 @@ public class MongoInsert{
         }
     }
     
-    public void One(Document doc) {
+    public void One(Document doc) throws Exception{
         Mongo.getInstance().Insert(col, List.of(doc));
     }
      
-    public void Many(List<Document> docs) {
+    public void Many(List<Document> docs) throws Exception {
     	Mongo.getInstance().Insert(col, docs);
     }
 }
