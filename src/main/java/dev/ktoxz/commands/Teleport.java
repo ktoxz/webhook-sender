@@ -17,8 +17,11 @@ import org.bukkit.entity.Player;
 
 import dev.ktoxz.db.MongoFind;
 import dev.ktoxz.main.KtoxzWebhook;
+import dev.ktoxz.manager.EffectManager;
 import dev.ktoxz.manager.TeleportManager;
 import dev.ktoxz.manager.UserManager;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 
 public class Teleport implements CommandExecutor, TabCompleter {
 
@@ -30,30 +33,37 @@ public class Teleport implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (!(sender instanceof Player)) {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage("Chỉ người chơi mới dùng được lệnh này.");
             return true;
         }
-
-        Player player = (Player) sender;
 
         if (args.length != 1) {
             player.sendMessage("§cDùng đúng: /tp <địa điểm|tên người chơi>");
             return true;
         }
 
-        String arg = args[0].toLowerCase();
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            String arg = args[0].toLowerCase();
+            Location spot = getSpotLocation(arg);
 
-        // Thử tìm theo địa điểm lưu trong Mongo
-        
-        Location spot = getSpotLocation(arg);
-        if(teleportToSpot(player, spot)) {
-            player.sendMessage("§aDịch chuyển đến địa điểm: " + arg);
-        	return true;
-        }
-        // Teleport đến người chơi khác
-        return teleportToPlayer(player, arg);
+            if (spot != null) {
+                startCountdown(player, () -> {
+                    if (!player.isOnline()) return;
+                    player.teleport(spot);
+                    player.sendMessage("§aDịch chuyển đến địa điểm: " + arg);
+                    TeleportManager.useTp(player, "teleport_to_spot");
+                    UserManager.showBalance(player);
+                });
+            } else {
+                teleportToPlayerAsync(player, arg);
+            }
+        });
+
+        return true;
     }
+
+
 
     private Location getSpotLocation(String name) {
         List<Document> spots = TeleportManager.getTpSpots(false); // dùng cache
@@ -82,30 +92,39 @@ public class Teleport implements CommandExecutor, TabCompleter {
     	return false;
     }
 
-    private boolean teleportToPlayer(Player player, String targetName) {
-        if (!TeleportManager.isEnough(player)) {
-            player.sendMessage("§cHết tiền roài.");
-            return true;
-        }
-
+    private void teleportToPlayerAsync(Player player, String targetName) {
         Player target = Bukkit.getPlayerExact(targetName);
         if (target == null || !target.isOnline()) {
-            player.sendMessage("§cNgười chơi không tồn tại hoặc không online.");
-            return true;
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                player.sendMessage("§cNgười chơi không tồn tại hoặc không online.");
+            });
+            return;
         }
 
         if (target.getName().equals(player.getName())) {
-            player.sendMessage("§cBạn không thể teleport đến chính mình.");
-            return true;
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                player.sendMessage("§cBạn không thể teleport đến chính mình.");
+            });
+            return;
         }
 
-        // Thực hiện dịch chuyển & trừ tiền
-        player.teleport(target.getLocation());
-        TeleportManager.useTp(player, "tele_to_player");
-        player.sendMessage("§aĐã dịch chuyển đến " + target.getName());
-        UserManager.showBalance(player);
-        return true;
+        if (!TeleportManager.isEnough(player)) {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                player.sendMessage("§cHết tiền roài.");
+            });
+            return;
+        }
+
+        startCountdown(player, () -> {
+            if (!player.isOnline() || !target.isOnline()) return;
+            player.teleport(target.getLocation());
+            player.sendMessage("§aĐã dịch chuyển đến " + target.getName());
+            EffectManager.showTeleportComplete(player);
+            TeleportManager.useTp(player, "tele_to_player");
+            UserManager.showBalance(player);
+        });
     }
+
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args) {
@@ -130,5 +149,27 @@ public class Teleport implements CommandExecutor, TabCompleter {
 
         return Collections.emptyList();
     }
+    
+    private void startCountdown(Player player, Runnable onFinish) {
+        final int[] count = {5};
+
+        Bukkit.getScheduler().runTaskTimer(plugin, task -> {
+            if (!player.isOnline()) {
+                task.cancel();
+                return;
+            }
+
+            if (count[0] <= 0) {
+                task.cancel();
+                onFinish.run();
+            } else {
+                player.spigot().sendMessage(ChatMessageType.ACTION_BAR,
+                    new TextComponent("§eDịch chuyển sau §c" + count[0] + " §egiây..."));
+                count[0]--;
+            }
+        }, 0L, 20L); // mỗi 20 ticks (1 giây)
+    }
+
+
    
 }

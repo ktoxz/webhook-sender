@@ -4,8 +4,6 @@ import org.bson.Document;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,9 +14,10 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
-import dev.ktoxz.db.MongoFind;
 import dev.ktoxz.manager.TransactionManager;
 import dev.ktoxz.manager.UserManager;
+import dev.ktoxz.manager.EffectManager;
+import dev.ktoxz.manager.ItemPriceCache;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,60 +69,52 @@ public class ChestListener implements Listener {
 
         Player player = (Player) e.getPlayer();
 
-        // Chỉ người mở mới được giải phóng quyền
         if (!player.equals(chestOwner)) {
             plugin.getLogger().info("ℹ️ " + player.getName() + " đóng rương nhưng không phải người mở chính.");
             return;
         }
 
         plugin.getLogger().info("📦 " + player.getName() + " đã đóng rương trung tâm.");
+
         List<Document> tradeableItems = new ArrayList<>();
-        MongoFind priceFinder = new MongoFind("minecraft", "itemTrade");
-        double totalPrice = 0;
-        Boolean isLeft = false;
+        final double[] totalPrice = {0};
+        boolean isLeftover = false;
         for (int i = 0; i < e.getInventory().getSize(); i++) {
             ItemStack item = e.getInventory().getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
 
             String itemId = item.getType().name();
-            // Kiểm tra có trong bảng giá không
-            Document itemPriceDoc = priceFinder.One(new Document("_id", itemId), null);
-            
-            if (itemPriceDoc != null) {
-            	double price = itemPriceDoc.getDouble("price") * item.getAmount();
-                plugin.getLogger().info("✅ Đã phát hiện item có thể quy đổi: " + itemId + " x" + item.getAmount());
-                totalPrice += price;
-                // Lưu vào danh sách transaction
+            if (ItemPriceCache.contains(itemId)) {
+                double price = ItemPriceCache.getPrice(itemId);
+                int quantity = item.getAmount();
+                totalPrice[0] += price * quantity;
+
                 tradeableItems.add(new Document()
-                    .append("item", itemId)
-                    .append("quantity", item.getAmount())
-                    .append("price", price)
+                        .append("item", itemId)
+                        .append("quantity", quantity)
+                        .append("price", price)
                 );
 
-                // Xoá khỏi inventory rương
-                e.getInventory().setItem(i, null);
+                e.getInventory().setItem(i, null); // remove item
             } else {
-                plugin.getLogger().info("⚠️ Không có giá quy đổi cho item: " + itemId + ", giữ nguyên.");
-                isLeft = true;
+            	isLeftover = true;
+                plugin.getLogger().info("⚠️ Không có giá quy đổi cho item: " + itemId + ", giữ lại.");
             }
         }
         
-        if(isLeft) {
-        	player.sendMessage("Có đồ còn ở trong rương do không trao đổi được!");
+        if(isLeftover) {
+        	player.sendMessage("Còn đồ trong rương do không trao đổi được!");
+            EffectManager.showTradeLeftover(player);
+
         }
 
-        
-        int reCode = TransactionManager.insertTransaction(tradeableItems, player, totalPrice);
-        if(reCode == 2 || reCode == 1) {
-        	player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, 2f, 1f);
-        	player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 2f, 1.3f);
-        	player.spawnParticle(Particle.FIREWORKS_SPARK, player.getLocation(), 10);
-        	plugin.getLogger().info("Thêm transaction mới thành công");
-        	plugin.getLogger().info("Thêm thành công "+totalPrice+" cho người chơi "+player.getName());
-        	UserManager.showBalance(player);
-        } else if(reCode == -1) {
-        	plugin.getLogger().warning("Không có gì để thêm");
-        }
+        TransactionManager.insertTransactionAsync(tradeableItems, player, () -> {
+            player.sendMessage("§a✔ Giao dịch thành công! Tổng cộng: " + String.format("%.2f",totalPrice[0]) + " xu.");
+            EffectManager.showTradeComplete(player);
+            UserManager.showBalance(player);
+            
+        });
+
         chestOwner = null;
     }
 

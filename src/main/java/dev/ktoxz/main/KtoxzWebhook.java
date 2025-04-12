@@ -10,11 +10,13 @@ import dev.ktoxz.commands.SetCentralChest;
 import dev.ktoxz.commands.Teleport;
 import dev.ktoxz.db.Mongo;
 import dev.ktoxz.listener.ChestListener;
+import dev.ktoxz.manager.ItemPriceCache;
 
 public class KtoxzWebhook extends JavaPlugin {
 
     @Override
     public void onEnable() {
+    	
         // Đăng ký lệnh
         getCommand("setcentralchest").setExecutor(new SetCentralChest(this));
         getCommand("addspot").setExecutor(new AddSpot(this));
@@ -26,5 +28,7 @@ public class KtoxzWebhook extends JavaPlugin {
         getCommand("tp").setTabCompleter(new Teleport(this));
         // Connect to DB
         Mongo.getInstance().Connect();
+        ItemPriceCache.load();
+
     }
 }

@@ -18,6 +18,8 @@ public class Balance implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    	
+    	
         if (!(sender instanceof Player)) {
             sender.sendMessage("Chỉ người chơi mới dùng được lệnh này.");
             return true;

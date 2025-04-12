@@ -4,7 +4,7 @@
   <groupId>dev.ktoxz</groupId>
   <artifactId>KtoxzWebhook</artifactId>
   <name>KtoxzWebhook</name>
-  <version>1.2.3</version>
+  <version>1.2.5</version>
   <build>
     <resources>
       <resource>

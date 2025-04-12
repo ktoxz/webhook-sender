@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bson.Document;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import com.mongodb.client.FindIterable;
@@ -30,13 +31,19 @@ public class TeleportManager {
 	}
 	
 	public static void useTp(Player player, String nameEvent) {
-		MongoUpdate updater = new MongoUpdate("minecraft", "user");
-		Document event = findService(nameEvent);
-		updater.Update(
-			    new Document("playerId", player.getUniqueId().toString()),
-			    new Document("$inc", new Document("balance", -event.getDouble("price")))
-			);
+	    Bukkit.getScheduler().runTaskAsynchronously(
+	        Bukkit.getPluginManager().getPlugin("KtoxzWebhook"),
+	        () -> {
+	            MongoUpdate updater = new MongoUpdate("minecraft", "user");
+	            Document event = findService(nameEvent);
+	            updater.Update(
+	                new Document("playerId", player.getUniqueId().toString()),
+	                new Document("$inc", new Document("balance", -event.getDouble("price")))
+	            );
+	        }
+	    );
 	}
+
 
 	
 	public static List<Document> getTpSpots(Boolean refresh) {
