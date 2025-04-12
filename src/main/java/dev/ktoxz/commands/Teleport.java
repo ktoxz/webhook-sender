@@ -48,13 +48,7 @@ public class Teleport implements CommandExecutor, TabCompleter {
             Location spot = getSpotLocation(arg);
 
             if (spot != null) {
-                startCountdown(player, () -> {
-                    if (!player.isOnline()) return;
-                    player.teleport(spot);
-                    player.sendMessage("§aDịch chuyển đến địa điểm: " + arg);
-                    TeleportManager.useTp(player, "teleport_to_spot");
-                    UserManager.showBalance(player);
-                });
+            	teleportToSpotAsync(player, spot, arg);
             } else {
                 teleportToPlayerAsync(player, arg);
             }
@@ -80,16 +74,21 @@ public class Teleport implements CommandExecutor, TabCompleter {
         return null;
     }
     
-    private boolean teleportToSpot(Player player,Location spot) {
-    	
-    	if (spot != null) {
+    private void teleportToSpotAsync(Player player, Location spot, String spotName) {
+        if (!TeleportManager.isEnoughSpot(player)) {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                player.sendMessage("§cHết tiền roài.");
+            });
+            return;
+        }
+
+        startCountdown(player, () -> {
+            if (!player.isOnline()) return;
+            player.sendMessage("§aDịch chuyển đến địa điểm: " + spotName);
             player.teleport(spot);
-        	MongoFind finder = new MongoFind("minecraft", "user");
             TeleportManager.useTp(player, "teleport_to_spot");
             UserManager.showBalance(player);
-            return true;
-        }
-    	return false;
+        });
     }
 
     private void teleportToPlayerAsync(Player player, String targetName) {
@@ -119,9 +118,9 @@ public class Teleport implements CommandExecutor, TabCompleter {
             if (!player.isOnline() || !target.isOnline()) return;
             player.teleport(target.getLocation());
             player.sendMessage("§aĐã dịch chuyển đến " + target.getName());
-            EffectManager.showTeleportComplete(player);
             TeleportManager.useTp(player, "tele_to_player");
             UserManager.showBalance(player);
+            EffectManager.showTeleportComplete(player);
         });
     }
 

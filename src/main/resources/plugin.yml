@@ -1,6 +1,6 @@
 name: KtoxzWebhook
 main: dev.ktoxz.main.KtoxzWebhook
-version: 1.2.5
+version: 1.2.5-hotfix
 api-version: 1.20
 author: ktoxz
 

@@ -6,7 +6,7 @@
 
   <groupId>dev.ktoxz</groupId>
   <artifactId>KtoxzWebhook</artifactId>
-  <version>1.2.5</version>
+  <version>1.2.5-hotfix</version>
   <packaging>jar</packaging>
 
   <name>KtoxzWebhook</name>
