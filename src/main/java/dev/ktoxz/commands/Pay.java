@@ -11,6 +11,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import dev.ktoxz.manager.EffectManager;
 import dev.ktoxz.manager.UserManager;
 import dev.ktoxz.model.PendingPayRequest;
 
@@ -79,6 +80,9 @@ public class Pay implements CommandExecutor {
                         pendingPayments.remove(receiver.getUniqueId());
                         sendPlayer.sendMessage("§c❌ Người nhận không phản hồi. Tiền đã được hoàn lại.");
                         receiver.sendMessage("§c⏳ Đã hết thời gian xác nhận chuyển tiền.");
+                        EffectManager.showTradeLeftover(sendPlayer);
+                        EffectManager.showTradeLeftover(receiver);
+
                     }
                 }, 20L * 60); // 60 giây
             });

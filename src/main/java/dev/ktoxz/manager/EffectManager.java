@@ -28,10 +28,6 @@ public class EffectManager {
     
     public static void showTeleportComplete(Player player) {
         Location loc = player.getLocation().add(0, 1, 0);
-
-        player.getWorld().spawnParticle(Particle.PORTAL, loc, 40, 0.6, 0.6, 0.6, 0.2);
-        player.getWorld().spawnParticle(Particle.SPELL_MOB_AMBIENT, loc, 15, 0.3, 0.3, 0.3, 0.01);
-        player.getWorld().spawnParticle(Particle.END_ROD, loc, 20, 0.2, 0.2, 0.2, 0.03);
         player.playSound(loc, Sound.ENTITY_ENDERMAN_TELEPORT, 3.0f, 1.0f);
     }
 }

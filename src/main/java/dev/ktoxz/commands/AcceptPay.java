@@ -7,6 +7,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import dev.ktoxz.manager.EffectManager;
 import dev.ktoxz.manager.UserManager;
 import dev.ktoxz.model.PendingPayRequest;
 
@@ -40,7 +41,9 @@ public class AcceptPay implements CommandExecutor {
 
             // Gửi thông báo
             receiver.sendMessage("§a✔ Bạn đã nhận " + amount + " xu từ " + senderPlayer.getName());
+            EffectManager.showTradeComplete(receiver);
             senderPlayer.sendMessage("§a✔ " + receiver.getName() + " đã nhận " + amount + " xu từ bạn.");
+            EffectManager.showTradeComplete(senderPlayer);
         });
 
         return true;
