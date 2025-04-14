@@ -2,6 +2,7 @@ package dev.ktoxz.manager;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import org.bson.Document;
 import org.bukkit.Bukkit;
@@ -93,6 +94,27 @@ public class UserManager {
                 );
             }
         );
+    }
+    
+    public static void getBalanceAsync(Player player, Consumer<Double> callback) {
+        Bukkit.getScheduler().runTaskAsynchronously(Bukkit.getPluginManager().getPlugin("KtoxzWebhook"), () -> {
+            MongoFind finder = new MongoFind("minecraft", "user");
+            Document playerFind = finder.One(new Document("playerId", player.getUniqueId().toString()), null);
+
+            if (playerFind == null) {
+                Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("KtoxzWebhook"), () -> {
+                    player.sendMessage("§cBạn chưa có tài khoản để hiện thị số dư, qua nhà Ktoxz đi.");
+                });
+                return;
+            }
+
+            double balance = playerFind.getDouble("balance");
+
+            // Gọi lại callback ở main thread
+            Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("KtoxzWebhook"), () -> {
+                callback.accept(balance);
+            });
+        });
     }
 
 }
