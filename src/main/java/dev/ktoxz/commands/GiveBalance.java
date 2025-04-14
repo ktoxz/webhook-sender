@@ -44,6 +44,7 @@ public class GiveBalance implements CommandExecutor {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 if (re == 1) {
                     sender.sendMessage("§a✔ Đã cộng " + amount + " coin cho " + target.getName());
+                    target.sendMessage("§a Nhận "+ amount + " coin từ "+sender.getName());
                 } else {
                     sender.sendMessage("§c❌ Không thể cộng coin. Có thể người chơi chưa có hồ sơ trong DB.");
                 }
