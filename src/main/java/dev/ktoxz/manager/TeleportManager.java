@@ -2,9 +2,12 @@ package dev.ktoxz.manager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.bson.Document;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import com.mongodb.client.FindIterable;
@@ -61,4 +64,42 @@ public class TeleportManager {
 		MongoFind finder = new MongoFind("minecraft", "service");
 		return finder.One(new Document("_id", name), null);
 	}
+	
+	//ArenaStuff
+	
+	
+	private static final Random random = new Random();
+
+    public static Document getRandomArena() {
+        MongoFind finder = new MongoFind("minecraft", "arena");
+        List<Document> arenas = finder.Many(null, null).into(new ArrayList<>());
+        if (arenas.isEmpty()) return null;
+        return arenas.get(random.nextInt(arenas.size()));
+    }
+
+    public static void teleportPlayerToRandomSpotInArena(Player player, Document arena) {
+        if (arena == null) {
+            player.sendMessage("§cKhông tìm thấy arena hợp lệ!");
+            return;
+        }
+
+        List<Document> spots = arena.getList("spots", Document.class);
+        if (spots == null || spots.isEmpty()) {
+            player.sendMessage("§cArena '" + arena.getString("_id") + "' chưa có spot.");
+            return;
+        }
+
+        Document spot = spots.get(random.nextInt(spots.size()));
+        int x = spot.getInteger("x");
+        int y = spot.getInteger("y");
+        int z = spot.getInteger("z");
+
+        World world = Bukkit.getWorld("world"); // chỉnh tên world nếu bạn dùng nhiều thế giới
+        if (world != null) {
+            player.teleport(new Location(world, x + 0.5, y, z + 0.5));
+        } else {
+            player.sendMessage("§cWorld không tồn tại.");
+        }
+    }
+
 }

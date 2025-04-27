@@ -4,7 +4,7 @@
   <groupId>dev.ktoxz</groupId>
   <artifactId>KtoxzWebhook</artifactId>
   <name>KtoxzWebhook</name>
-  <version>1.2.6</version>
+  <version>1.2.2.2</version>
   <build>
     <resources>
       <resource>
@@ -59,7 +59,7 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.20.1-R0.1-SNAPSHOT</version>
+      <version>1.21.5-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

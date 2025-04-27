@@ -39,6 +39,38 @@ commands:
     description: Đồng ý nhận tiền từ người khác
     usage: /ac <name> <amount>
 
+  link:
+    description: Liên kết tài khoản với Discord
+    usage: /link <tên discord>
+
+  dual:
+    description: Tạo phòng hoặc rủ ai vô đấm
+    usage: /dual <name>
+
+  join:
+    description: Tham gia vào phòng đấm lộn
+    usage: /join
+
+  start:
+    description: Bắt đầu trận chiến
+    usage: /start
+
+  cancel:
+    description: Hủy trận
+    usage: /cancel
+
+  addArena:
+    description: Thêm chỗ
+    usage: /addArena <loc1> <loc2> <name>
+    permission: ktoxz.addArena
+    permission-message: Bạn không có quyền sử dụng lệnh này!
+
+  addArenaSpot:
+    description: Thêm chỗ trong arena
+    usage: /addArenaSpot <name>
+    permission: ktoxz.addArenaSpot
+    permission-message: Bạn không có quyền sử dụng lệnh này!
+
 permissions:
   ktoxz.setcentralchest:
     description: Cho phép đặt rương trung tâm
@@ -50,4 +82,12 @@ permissions:
 
   ktoxz.givebalance:
     description: Cho phép gửi tiền cho người khác
+    default: op
+
+  ktoxz.addArena:
+    description: Abc
+    default: op
+
+  ktoxz.addArenaSpot:
+    description: Abcd
     default: op
