@@ -29,12 +29,14 @@ public class PvpSession {
     private boolean countdownPhase = false;
     private boolean isOver = false;
     private Document chosenArena = null; // 🛠 arena được chọn
-
+    private int teamCounter = 0; // Để gán ID team
+    private Map<Player, Integer> playerTeamMap = new HashMap<>();
+    
     private static final Set<Material> allowedMainhandItems = Set.of(
         Material.WOODEN_SWORD, Material.STONE_SWORD, Material.IRON_SWORD, Material.DIAMOND_SWORD, Material.NETHERITE_SWORD,
         Material.WOODEN_AXE, Material.STONE_AXE, Material.IRON_AXE, Material.DIAMOND_AXE, Material.NETHERITE_AXE,
         Material.BOW, Material.CROSSBOW, Material.TRIDENT,
-        Material.FISHING_ROD, Material.FLINT_AND_STEEL, Material.SHEARS, Material.SNOWBALL
+        Material.FISHING_ROD, Material.FLINT_AND_STEEL, Material.SHEARS, Material.SNOWBALL, Material.MACE, Material.WIND_CHARGE
     );
 
     public PvpSession(Plugin plugin, Player owner, boolean isPublic) {
@@ -80,21 +82,68 @@ public class PvpSession {
         inventoryBackups.put(player.getUniqueId(), player.getInventory().getContents().clone());
         armorBackups.put(player.getUniqueId(), player.getInventory().getArmorContents().clone());
     }
+    
+    private void assignTeams() {
+        List<Player> shuffledPlayers = new ArrayList<>(players);
+        Collections.shuffle(shuffledPlayers); // Xáo trộn người chơi để phân phối công bằng
+
+        // Chia thành 2 team
+        for (Player p: players) {
+            playerTeamMap.put(p, 1);
+        }
+        // Có thể thêm hiệu ứng như màu da cho team
+    }
 
     private void clearInventoryExceptWhitelist(Player player) {
         List<ItemStack> keep = new ArrayList<>();
+
+        // 1. Lưu các item ở slot 0-2 nếu trong allowedMainhandItems
         for (int i = 0; i < 3; i++) {
             ItemStack item = player.getInventory().getItem(i);
             if (item != null && allowedMainhandItems.contains(item.getType())) {
                 keep.add(item.clone());
             }
         }
+
+        // 2. Lưu offhand item
+        ItemStack offhandItem = player.getInventory().getItemInOffHand();
+        if (offhandItem != null && offhandItem.getType() != Material.AIR && allowedMainhandItems.contains(offhandItem.getType())) {
+            offhandItem = offhandItem.clone();
+        } else {
+            offhandItem = null;
+        }
+
+        // 3. Lưu armor contents
+        ItemStack[] armorContents = player.getInventory().getArmorContents();
+        ItemStack[] savedArmor = new ItemStack[armorContents.length];
+        for (int i = 0; i < armorContents.length; i++) {
+            if (armorContents[i] != null && armorContents[i].getType() != Material.AIR) {
+                savedArmor[i] = armorContents[i].clone();
+            } else {
+                savedArmor[i] = null;
+            }
+        }
+
+        // 4. Clear toàn bộ inventory
         player.getInventory().clear();
+        player.getInventory().setArmorContents(new ItemStack[4]);
+        player.getInventory().setItemInOffHand(null);
+
+        // 5. Restore lại slot 0-2
         int slot = 0;
         for (ItemStack item : keep) {
             player.getInventory().setItem(slot++, item);
         }
+
+        // 6. Restore lại offhand
+        if (offhandItem != null) {
+            player.getInventory().setItemInOffHand(offhandItem);
+        }
+
+        // 7. Restore lại armor
+        player.getInventory().setArmorContents(savedArmor);
     }
+
 
     private void spawnChest(Player player) {
         Location loc = player.getLocation().clone().add(player.getLocation().getDirection().setY(0).normalize().multiply(2));
@@ -116,6 +165,7 @@ public class PvpSession {
                 if (countdown == 0) {
                     countdownPhase = false;
                     started = true;
+                    assignTeams(); // <--- Thêm dòng này để tạo team
 
                      // 🛠 Teleport vào spot random
 
@@ -198,7 +248,7 @@ public class PvpSession {
                     if (world != null && c1 != null && c2 != null) {
                         Location loc1 = new Location(world, c1.getInteger("x"), c1.getInteger("y"), c1.getInteger("z"));
                         Location loc2 = new Location(world, c2.getInteger("x"), c2.getInteger("y"), c2.getInteger("z"));
-                        RandomEvent.triggerRandomEvent(players, loc1, loc2);
+                        RandomEvent.triggerRandomEvent(players, loc1, loc2, plugin);
                     }
                 }
             }
@@ -240,15 +290,6 @@ public class PvpSession {
         loc.getWorld().playSound(loc, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
 
         winner.giveExp(100);
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (winner.isOnline()) {
-                    winner.teleport(winner.getWorld().getSpawnLocation());
-                }
-            }
-        }.runTaskLater(plugin, 5 * 20L);
 
         Bukkit.broadcastMessage("§6[Winner] §f" + winner.getName() + " đã chiến thắng trận PvP!");
     }

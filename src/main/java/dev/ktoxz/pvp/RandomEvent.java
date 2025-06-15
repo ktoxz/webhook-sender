@@ -1,18 +1,25 @@
 package dev.ktoxz.pvp;
 
 import org.bukkit.*;
+import org.bukkit.FireworkEffect.Type;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -21,47 +28,53 @@ public class RandomEvent {
     private static final Random random = new Random();
     private static Location corner1;
     private static Location corner2;
+    private static Plugin plugin;
+    private static final List<EventEntry> eventTable = List.of(
+            new EventEntry(0.02, RandomEvent::strengthV),
+            new EventEntry(0.05, RandomEvent::speedBoost),
+            new EventEntry(0.08, RandomEvent::strengthI),
+            new EventEntry(0.11, RandomEvent::regeneration),
+            new EventEntry(0.14, RandomEvent::jumpBoost),
+            new EventEntry(0.17, RandomEvent::resistance),
+            new EventEntry(0.23, RandomEvent::slowness),
+            new EventEntry(0.26, RandomEvent::weakness),
+            new EventEntry(0.29, RandomEvent::blindness),
+            new EventEntry(0.32, RandomEvent::wither),
+            new EventEntry(0.35, RandomEvent::poison),
+            new EventEntry(0.38, RandomEvent::hunger),
+            new EventEntry(0.41, RandomEvent::nausea),
+            new EventEntry(0.44, RandomEvent::slowFalling),
+            new EventEntry(0.47, RandomEvent::instantDamage),
+            new EventEntry(0.48, RandomEvent::dropElytra),
+            new EventEntry(0.49, RandomEvent::dropTotem),
+            new EventEntry(0.525, RandomEvent::dropGoldenApple),
+            new EventEntry(0.5575, RandomEvent::dropIronSword),
+            new EventEntry(0.59, RandomEvent::dropEnderPearl),
+            new EventEntry(0.6225, RandomEvent::dropShield),
+            new EventEntry(0.6875, RandomEvent::lightningStorm),
+            new EventEntry(0.72, RandomEvent::meteorShower),
+            new EventEntry(0.7525, RandomEvent::customTntRain),
+            new EventEntry(0.785, RandomEvent::pitfallTrap),
+            new EventEntry(0.8175, RandomEvent::randomWeather),
+            new EventEntry(0.91, RandomEvent::chickenArmy),
+            new EventEntry(1.0, RandomEvent::fireworkShow)
+        );
 
-    public static void triggerRandomEvent(Set<Player> players, Location c1, Location c2) {
-        RandomEvent.corner1 = c1;
-        RandomEvent.corner2 = c2;
-        double chance = Math.random();
+        public static void triggerRandomEvent(Set<Player> players, Location c1, Location c2, Plugin plugin1) {
+            corner1 = c1;
+            corner2 = c2;
+            plugin = plugin1;
 
-        if (chance < 0.02) strengthV(players);
-        else if (chance < 0.05) speedBoost(players);
-        else if (chance < 0.08) strengthI(players);
-        else if (chance < 0.11) regeneration(players);
-        else if (chance < 0.14) jumpBoost(players);
-        else if (chance < 0.17) resistance(players);
-        else if (chance < 0.20) haste(players);
+            double chance = Math.random();
+            for (EventEntry entry : eventTable) {
+                if (chance < entry.threshold) {
+                    entry.action.accept(players);
+                    break;
+                }
+            }
+        }
 
-        else if (chance < 0.23) slowness(players);
-        else if (chance < 0.26) weakness(players);
-        else if (chance < 0.29) blindness(players);
-        else if (chance < 0.32) wither(players);
-        else if (chance < 0.35) poison(players);
-        else if (chance < 0.38) hunger(players);
-        else if (chance < 0.41) nausea(players);
-        else if (chance < 0.44) slowFalling(players);
-        else if (chance < 0.47) instantDamage(players);
-
-        else if (chance < 0.48) dropElytra(players);
-        else if (chance < 0.49) dropTotem(players);
-        else if (chance < 0.525) dropGoldenApple(players);
-        else if (chance < 0.5575) dropIronSword(players);
-        else if (chance < 0.59) dropEnderPearl(players);
-        else if (chance < 0.6225) dropShield(players);
-
-        else if (chance < 0.655) tntRain(players);
-        else if (chance < 0.6875) lightningStorm(players);
-        else if (chance < 0.72) meteorShower(players);
-        else if (chance < 0.7525) randomBlockFall(players);
-        else if (chance < 0.785) pitfallTrap(players);
-        else if (chance < 0.8175) randomWeather(players);
-
-        else if (chance < 0.91) chickenArmy(players);
-        else fireworkShow(players);
-    }
+        private record EventEntry(double threshold, java.util.function.Consumer<Set<Player>> action) {}
 
     private static Location getRandomLocationInArena() {
         int minX = Math.min(corner1.getBlockX(), corner2.getBlockX());
@@ -124,20 +137,50 @@ public class RandomEvent {
         broadcastActionBar(players, message);
     }
 
-    private static void tntRain(Set<Player> players) {
+    private static void customTntRain(Set<Player> players) {
         for (int i = 0; i < 10; i++) {
-            Location loc = getRandomLocationInArena().add(0, 15, 0);
-            loc.getWorld().spawnEntity(loc, EntityType.TNT);
+            Location loc = getRandomLocationInArena().add(0, 15, 0); // spawn trên cao
+            World world = loc.getWorld();
+            if (world == null) continue;
+
+            // Tạo TNT thật
+            TNTPrimed tnt = (TNTPrimed) world.spawnEntity(loc, EntityType.TNT);
+            tnt.setFuseTicks(40); // 2 giây (40 ticks)
+            tnt.setYield(4.0f); // độ mạnh vụ nổ (mặc định là 4)
+            tnt.setIsIncendiary(false); // không gây cháy
         }
-        broadcastActionBar(players, "[ENVIRONMENT] TNT Rain bắt đầu!");
+
+        broadcastActionBar(players, "[ENVIRONMENT] Mưa TNT!");
     }
 
+
     private static void lightningStorm(Set<Player> players) {
-        for (int i = 0; i < 10; i++) {
-            getRandomLocationInArena().getWorld().strikeLightning(getRandomLocationInArena());
-        }
-        broadcastActionBar(players, "[ENVIRONMENT] Lightning Storm diễn ra!");
+        World world = getRandomLocationInArena().getWorld();
+        WeatherType oldWeather = world.hasStorm() ? WeatherType.DOWNFALL : WeatherType.CLEAR;
+
+        // Bắt đầu bão
+        world.setStorm(true);
+        broadcastActionBar(players, "[ENVIRONMENT] ⚡ Lightning Storm đang diễn ra!");
+
+        new BukkitRunnable() {
+            int count = 0;
+
+            @Override
+            public void run() {
+                if (count >= 10) {
+                    world.setStorm(oldWeather == WeatherType.DOWNFALL);
+                    broadcastActionBar(players, "[ENVIRONMENT] ☀ Trời đã quang trở lại.");
+                    cancel();
+                    return;
+                }
+
+                Location strikeLoc = getRandomLocationInArena();
+                world.strikeLightning(strikeLoc);
+                count++;
+            }
+        }.runTaskTimer(plugin, 0L, 20L); // 20 ticks = 1 giây
     }
+
 
     private static void meteorShower(Set<Player> players) {
         for (int i = 0; i < 15; i++) {
@@ -147,25 +190,38 @@ public class RandomEvent {
             fb.setIsIncendiary(true);
             fb.setYield(2F);
         }
+        
+        
+        
         broadcastActionBar(players, "[ENVIRONMENT] Meteor Shower diễn ra!");
     }
 
-    private static void randomBlockFall(Set<Player> players) {
-        for (int i = 0; i < 10; i++) {
-            Location loc = getRandomLocationInArena().add(0, 15, 0);
-            Material mat = random.nextBoolean() ? Material.ANVIL : Material.GRAVEL;
-            FallingBlock block = loc.getWorld().spawnFallingBlock(loc, mat.createBlockData());
-            block.setDropItem(false);
-        }
-        broadcastActionBar(players, "[ENVIRONMENT] Block Fall bắt đầu!");
-    }
+
 
     private static void pitfallTrap(Set<Player> players) {
+        Map<Location, Material> originalBlocks = new HashMap<>();
+
         for (Player p : players) {
-            Location loc = p.getLocation().subtract(0, 1, 0);
-            loc.getBlock().setType(Material.LAVA);
+            Location loc = p.getLocation().clone().subtract(0, 1, 0).getBlock().getLocation();
+            Block block = loc.getBlock();
+            originalBlocks.put(loc, block.getType());
+            block.setType(Material.LAVA);
         }
+
         broadcastActionBar(players, "[ENVIRONMENT] Bẫy Lava dưới chân bạn!");
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Map.Entry<Location, Material> entry : originalBlocks.entrySet()) {
+                    Block block = entry.getKey().getBlock();
+                    if (block.getType() == Material.LAVA) {
+                        block.setType(entry.getValue());
+                    }
+                }
+                broadcastActionBar(players, "[ENVIRONMENT] Đã tắt bẫy Lava!");
+            }
+        }.runTaskLater(plugin, 20 * 7); // hoàn nguyên sau 7 giây
     }
 
     private static void randomWeather(Set<Player> players) {
@@ -174,17 +230,84 @@ public class RandomEvent {
         world.setStorm(storm);
         world.setThundering(storm);
         broadcastActionBar(players, storm ? "[ENVIRONMENT] Bắt đầu Mưa!" : "[ENVIRONMENT] Trời đẹp!");
+        new BukkitRunnable() {
+        	int countdown = 5;
+            @Override
+            public void run() {
+                getRandomLocationInArena().getWorld().strikeLightning(getRandomLocationInArena());
+                if (countdown == 0) return;
+                countdown--;
+            }
+        }.runTaskLater(plugin, 20 * 3); // Delay 3 giây (20 ticks * 3)
     }
 
     private static void chickenArmy(Set<Player> players) {
-        for (int i = 0; i < 20; i++) {
-            getRandomLocationInArena().getWorld().spawnEntity(getRandomLocationInArena(), EntityType.CHICKEN);
+        List<Chicken> chickens = new ArrayList<>();
+        World world = getRandomLocationInArena().getWorld();
+
+        // Spawn 5 con gà ngẫu nhiên trong đấu trường
+        for (int i = 0; i < 5; i++) {
+            Location loc = getRandomLocationInArena();
+            Chicken chicken = (Chicken) world.spawnEntity(loc.add(0, 2, 0), EntityType.CHICKEN);
+            chickens.add(chicken);
         }
-        broadcastActionBar(players, "[FUN] Gà xâm chiếm đấu trường!");
+
+        broadcastActionBar(players, "[FUN] 🐔 Gà xâm chiếm đấu trường!");
+
+        // Đợi 5–10 giây rồi tiêu diệt gà và xử lý hiệu ứng
+        int delaySeconds = 5 + random.nextInt(6); // 5 đến 10 giây
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Chicken chicken : chickens) {
+                    if (chicken.isValid()) {
+                        Location loc = chicken.getLocation();
+
+                        // 50% bắn pháo hoa, 50% phát nổ như creeper
+                        if (random.nextBoolean()) {
+                            // Pháo hoa
+                            Firework fw = (Firework) loc.getWorld().spawnEntity(loc, EntityType.FIREWORK_ROCKET);
+                            FireworkMeta meta = fw.getFireworkMeta();
+                            meta.addEffect(FireworkEffect.builder()
+                                    .withColor(Color.RED)
+                                    .with(Type.BALL_LARGE)
+                                    .trail(true)
+                                    .flicker(true)
+                                    .build());
+                            meta.setPower(1);
+                            fw.setFireworkMeta(meta);
+                            fw.detonate(); // Kích nổ ngay lập tức
+                        } else {
+                            // Nổ như creeper
+                            loc.getWorld().createExplosion(loc, 2.0f, false, false); // power 2, không đốt, không phá block
+                        }
+
+                        chicken.remove();
+                    }
+                }
+
+                broadcastActionBar(players, "[FUN] 💥 Cuộc xâm lăng của gà đã kết thúc!");
+            }
+        }.runTaskLater(plugin, delaySeconds * 20L); // Chuyển giây thành ticks
     }
 
+    
+    private static void spawnFireworkAt(Location loc) {
+        Firework firework = (Firework) loc.getWorld().spawn(loc, Firework.class);
+        FireworkMeta meta = firework.getFireworkMeta();
+        meta.addEffect(FireworkEffect.builder()
+                .withColor(Color.RED, Color.YELLOW, Color.ORANGE)
+                .with(FireworkEffect.Type.BALL_LARGE)
+                .flicker(true)
+                .trail(true)
+                .build());
+        meta.setPower(1);
+        firework.setFireworkMeta(meta);
+    }
+
+
     private static void fireworkShow(Set<Player> players) {
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 2; i++) {
             Location loc = getRandomLocationInArena().add(0, 2, 0);
             Firework fw = (Firework) loc.getWorld().spawnEntity(loc, EntityType.FIREWORK_ROCKET);
             FireworkMeta meta = fw.getFireworkMeta();
@@ -203,7 +326,6 @@ public class RandomEvent {
     private static void regeneration(Set<Player> players) { applyEffect(players, PotionEffectType.REGENERATION, 20*15, 1, "[BUFF] +Regeneration II trong 15s!"); }
     private static void jumpBoost(Set<Player> players) { applyEffect(players, PotionEffectType.JUMP_BOOST, 20*20, 2, "[BUFF] +Jump Boost III trong 20s!"); }
     private static void resistance(Set<Player> players) { applyEffect(players, PotionEffectType.RESISTANCE, 20*20, 1, "[BUFF] +Resistance II trong 20s!"); }
-    private static void haste(Set<Player> players) { applyEffect(players, PotionEffectType.HASTE, 20*20, 1, "[BUFF] +Haste II trong 20s!"); }
     private static void strengthV(Set<Player> players) { applyEffect(players, PotionEffectType.STRENGTH, 20*10, 4, "[BUFF] +Strength V trong 10s! (Hiếm)"); }
 
     private static void slowness(Set<Player> players) { applyEffect(players, PotionEffectType.SLOWNESS, 20*10, 0, "[DEBUFF] -Slowness I trong 10s!"); }
@@ -226,12 +348,24 @@ public class RandomEvent {
     }
 
     private static void broadcastActionBar(Set<Player> players, String message) {
-        for (Player p : players) {
-            p.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
+        String coloredMessage = colorizePrefix(message);
+
+        for (Player player : players) {
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(coloredMessage));
         }
     }
 
-    private static void broadcast(Set<Player> players, String message) {
-        broadcastActionBar(players, message);
+
+    private static String colorizePrefix(String message) {
+        if (message.startsWith("[ITEM]")) {
+            return "§6" + message; // Vàng sáng
+        } else if (message.startsWith("[ENVIRONMENT]")) {
+            return "§b" + message; // Xanh dương
+        } else if (message.startsWith("[FUN]")) {
+            return "§d" + message; // Hồng tím
+        } else {
+            return "§f" + message; // Trắng mặc định
+        }
     }
+
 }

@@ -2,6 +2,7 @@ package dev.ktoxz.pvp;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.Chest;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -25,7 +26,7 @@ public class ChestManager {
     );
 
     private static final Set<Material> utilityMaterials = Set.of(
-            Material.ENDER_PEARL, Material.TOTEM_OF_UNDYING, Material.FIRE_CHARGE
+            Material.ENDER_PEARL, Material.FIRE_CHARGE, Material.WIND_CHARGE
     );
 
     private static final Set<Material> foodMaterials = Set.of(
@@ -36,9 +37,7 @@ public class ChestManager {
             Material.POTION, Material.SPLASH_POTION
     );
 
-    private static final Set<Material> specialMaterials = Set.of(
-            Material.TNT
-    );
+   
 
     // Ghi chú Plugin để sử dụng schedule task
     private static Plugin plugin;
@@ -59,63 +58,94 @@ public class ChestManager {
             fillChestWithItems(chest.getInventory());
         }
 
+        // 🛠 Xoay chest theo hướng người chơi
+        if (block.getBlockData() instanceof org.bukkit.block.data.type.Chest chestData) {
+            chestData.setFacing(getFacingDirection(player));
+            block.setBlockData(chestData);
+        }
+
         playerChests.put(player.getUniqueId(), block);
 
         startCountdown(player);
     }
+    
+    private static BlockFace getFacingDirection(Player player) {
+        float yaw = player.getLocation().getYaw();
+        yaw = (yaw % 360 + 360) % 360;
 
-    static void fillChestWithItems(Inventory inv) {
-        inv.addItem(createRandomWeapon());
-        inv.addItem(createRandomUtility());
-        inv.addItem(createRandomFood());
-        inv.addItem(createRandomPotion());
-        inv.addItem(createSpecialItem());
+        if (yaw >= 45 && yaw < 135) {
+            return BlockFace.WEST; // nhìn qua trái
+        } else if (yaw >= 135 && yaw < 225) {
+            return BlockFace.NORTH; // nhìn về sau
+        } else if (yaw >= 225 && yaw < 315) {
+            return BlockFace.EAST; // nhìn qua phải
+        } else {
+            return BlockFace.SOUTH; // mặc định nhìn phía trước
+        }
     }
 
-    private static ItemStack createRandomWeapon() {
-        Material material = getRandomElement(weaponMaterials);
+
+    static void fillChestWithItems(Inventory inv) {
+        int slot = 0;
+        int size = inv.getSize(); // lấy số lượng slot của rương
+
+        for (Material material : weaponMaterials) {
+            if (slot >= size) break;
+            inv.setItem(slot++, createWeapon(material));
+        }
+
+        slot = Math.max(slot, 9);
+        for (Material material : utilityMaterials) {
+            if (slot >= size) break;
+            inv.setItem(slot++, createUtility(material));
+        }
+
+        slot = Math.max(slot, 18);
+        for (Material material : foodMaterials) {
+            if (slot >= size) break;
+            inv.setItem(slot++, createFood(material));
+        }
+
+        slot = Math.max(slot, 27);
+        for (Material material : potionMaterials) {
+            if (slot >= size) break;
+            inv.setItem(slot++, createPotion(material));
+        }
+    }
+
+
+    private static ItemStack createWeapon(Material material) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             if (material.toString().contains("SWORD") || material.toString().contains("AXE")) {
-                meta.addEnchant(Enchantment.SHARPNESS, 1, true); // Sharpness I
+                meta.addEnchant(Enchantment.SHARPNESS, 1, true);
             } else if (material == Material.BOW) {
-                meta.addEnchant(Enchantment.POWER, 1, true); // Power I
+                meta.addEnchant(Enchantment.POWER, 1, true);
             } else if (material == Material.TRIDENT) {
-                meta.addEnchant(Enchantment.LOYALTY, 1, true); // Loyalty I
+                meta.addEnchant(Enchantment.LOYALTY, 1, true);
             }
             item.setItemMeta(meta);
         }
         return item;
     }
 
-    private static ItemStack createRandomUtility() {
-        Material material = getRandomElement(utilityMaterials);
+    private static ItemStack createUtility(Material material) {
         if (material == Material.ENDER_PEARL) return new ItemStack(material, 10);
         if (material == Material.FIRE_CHARGE) return new ItemStack(material, 64);
         return new ItemStack(material, 1);
     }
 
-    private static ItemStack createRandomFood() {
-        Material material = getRandomElement(foodMaterials);
+    private static ItemStack createFood(Material material) {
         if (material == Material.GOLDEN_APPLE) return new ItemStack(material, 2);
         if (material == Material.GOLDEN_CARROT) return new ItemStack(material, 6);
         return new ItemStack(material, 15);
     }
 
-    private static ItemStack createRandomPotion() {
-        Material material = getRandomElement(potionMaterials);
+    private static ItemStack createPotion(Material material) {
         return new ItemStack(material, 1);
     }
 
-    private static ItemStack createSpecialItem() {
-        return new ItemStack(Material.TNT, 5);
-    }
-
-    private static <T> T getRandomElement(Set<T> set) {
-        int index = random.nextInt(set.size());
-        return new ArrayList<>(set).get(index);
-    }
 
     private static void startCountdown(Player player) {
         new BukkitRunnable() {

@@ -13,6 +13,7 @@ commands:
 
   tp:
     description: Teleport đến địa điểm đã định trước
+    permission: ktoxz.tp
     usage: /tp <spawn|home|minigame|name>
 
   addspot:
