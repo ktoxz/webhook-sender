@@ -6,32 +6,85 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerShearEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.Location;
+
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
+import com.sk89q.worldedit.math.BlockVector3; // Thêm import này
+import dev.ktoxz.main.KtoxzWebhook; // Import plugin chính để lấy WorldGuardPlugin
 
 public class PvpSessionListener implements Listener {
 
-	@EventHandler
-	public void onPlayerMove(PlayerMoveEvent event) {
-	    Player player = event.getPlayer();
+    private final KtoxzWebhook plugin; // Thêm biến plugin
 
-	    if (!PvpSessionManager.isInSession(player)) return;
-	    PvpSession session = PvpSessionManager.getSession(player);
+    public PvpSessionListener(KtoxzWebhook plugin) { // Thêm constructor
+        this.plugin = plugin;
+    }
 
-	    if (session == null) return;
+    @EventHandler
+    public void onPlayerMove(PlayerMoveEvent event) {
+        Player player = event.getPlayer();
 
-	    // 👉 Chỉ chặn move nếu đang trong countdownPhase
-	    if (session.isCountdownPhase()) {
-	        if (event.getFrom().getX() != event.getTo().getX() || event.getFrom().getZ() != event.getTo().getZ()) {
-	            event.setCancelled(true);
-	        }
-	    }
-	}
+        if (!PvpSessionManager.isInSession(player)) return;
+        PvpSession session = PvpSessionManager.getSession(player);
 
+        if (session == null) return;
+
+        // 👉 Chỉ chặn move nếu đang trong countdownPhase hoặc đã bắt đầu trận đấu
+        if (session.isCountdownPhase()) {
+            if (event.getFrom().getX() != event.getTo().getX() || event.getFrom().getZ() != event.getTo().getZ()) {
+                event.setCancelled(true);
+            }
+        } else if (session.isStarted()) {
+            // Kiểm tra WorldGuard region khi trận đấu đã bắt đầu
+            Location to = event.getTo();
+            if (to == null) return; // Đảm bảo to location không null
+
+            String arenaRegionName = session.getArenaRegionName();
+            if (arenaRegionName == null || plugin.getWorldGuardPlugin() == null) {
+                // Log lỗi hoặc thông báo nếu không có region name hoặc WorldGuard không được tìm thấy
+                plugin.getLogger().warning("Không tìm thấy tên region hoặc WorldGuard! Không thể kiểm tra vùng PvP.");
+                return;
+            }
+
+            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+            RegionManager regionManager = container.get(BukkitAdapter.adapt(to.getWorld()));
+
+            if (regionManager == null) {
+                plugin.getLogger().warning("Không tìm thấy RegionManager cho world " + to.getWorld().getName());
+                return;
+            }
+
+            ProtectedRegion arenaRegion = regionManager.getRegion(arenaRegionName);
+
+            if (arenaRegion == null) {
+                plugin.getLogger().warning("Không tìm thấy WorldGuard region với ID: " + arenaRegionName);
+                return;
+            }
+
+            // Kiểm tra nếu người chơi di chuyển ra ngoài region
+            // --- Đã sửa lỗi ở đây ---
+            // Tạo một BlockVector3 từ tọa độ khối của Location
+            BlockVector3 toBlockVector = BlockVector3.at(to.getBlockX(), to.getBlockY(), to.getBlockZ());
+            if (!arenaRegion.contains(toBlockVector)) {
+            // --- Hết sửa lỗi ---
+                event.setCancelled(true);
+                player.sendMessage("§cBạn không thể ra khỏi đấu trường PvP!");
+                // Teleport người chơi về vị trí cũ hoặc vào giữa arena
+                player.teleport(event.getFrom());
+            }
+        }
+    }
 
 
 	@EventHandler
@@ -96,16 +149,35 @@ public class PvpSessionListener implements Listener {
 	    Player player = event.getPlayer();
 	    
 	    if (!PvpSessionManager.isInSession(player)) return;
-	    
-	    // Remove người quit khỏi session
+
+	    PvpSession session = PvpSessionManager.getSession(player); // Lấy session trước khi remove
+	    if (session == null) return; // Đảm bảo session không null
+
+	    boolean isOwner = PvpSessionManager.isOwner(player); // Kiểm tra chủ phòng
+	    boolean sessionStarted = session.isStarted(); // Kiểm tra trạng thái session
+
+	    // Xóa người chơi khỏi session (được gọi cho cả chủ phòng và người chơi bình thường)
 	    PvpSessionManager.removePlayer(player);
 	    
-	    // Check còn 1 người sống sót
+	    if (isOwner) {
+	        if (!sessionStarted) { // Chủ phòng thoát khi session CHƯA BẮT ĐẦU
+	            session.broadcast("§cChủ phòng PvP (" + player.getName() + ") đã thoát, phòng đã bị hủy.");
+	            PvpSessionManager.closeSession(); // Hủy toàn bộ session
+	            return; // Đã xử lý, thoát
+	        } else { // Chủ phòng thoát khi session ĐÃ BẮT ĐẦU (trong trận đấu)
+	            // Xử lý như một người chơi bình thường chết (sẽ được checkForWin xử lý)
+	            session.broadcast("§cChủ phòng PvP (" + player.getName() + ") đã thoát khỏi trận đấu.");
+	        }
+	    }
+
+	    // Nếu không phải chủ phòng, hoặc chủ phòng thoát khi trận đấu đang diễn ra,
+	    // thì kiểm tra điều kiện chiến thắng
 	    checkForWin();
 	}
 
 	private void checkForWin() {
-	    if (!PvpSessionManager.hasActiveSession()) return;
+	    
+		if(!PvpSessionManager.hasActiveSession()) return;
 
 	    PvpSession session = PvpSessionManager.getActiveSession();
 	    for(Player p : session.getPlayers()) {
@@ -122,16 +194,17 @@ public class PvpSessionListener implements Listener {
 	
 	@EventHandler
 	public void onChestClick(InventoryClickEvent event) {
+		PvpSession session = PvpSessionManager.getActiveSession();
+		if(!PvpSessionManager.hasActiveSession()) return;
+		if(!session.getPlayers().contains(event.getWhoClicked())) return;
 	    if (!(event.getWhoClicked() instanceof Player player)) return;
 	    if (event.getClickedInventory() == null) return;
 	    if (event.getCurrentItem() == null) return;
 
 	    if (event.getView().getTopInventory().getType() == org.bukkit.event.inventory.InventoryType.CHEST) {
 
-	        // Nếu click vào chest để lấy đồ ra
 	        if (event.getClickedInventory().getType() == org.bukkit.event.inventory.InventoryType.CHEST) {
-	            
-	            // Đếm lại toàn bộ inventory player nếu thêm món sắp lấy
+
 	            int count = countInventoryAfterTaking(player, event.getCurrentItem());
 
 	            if (count > 10) {
@@ -141,7 +214,7 @@ public class PvpSessionListener implements Listener {
 	        }
 	    }
 	}
-	
+
 	private int countInventoryAfterTaking(Player player, ItemStack newItem) {
 	    int count = 0;
 
@@ -157,7 +230,6 @@ public class PvpSessionListener implements Listener {
 
 	    return count;
 	}
-
 
 
 }

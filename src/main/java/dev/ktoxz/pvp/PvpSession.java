@@ -5,13 +5,26 @@ import org.bson.Document;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
+import com.sk89q.worldedit.math.BlockVector3;
+import dev.ktoxz.main.KtoxzWebhook;
+
 
 import java.util.*;
 
@@ -28,9 +41,15 @@ public class PvpSession {
     private boolean started = false;
     private boolean countdownPhase = false;
     private boolean isOver = false;
-    private Document chosenArena = null; // 🛠 arena được chọn
-    private int teamCounter = 0; // Để gán ID team
+    private Document chosenArena = null;
+    private String arenaRegionName;
+    private int teamCounter = 0;
     private Map<Player, Integer> playerTeamMap = new HashMap<>();
+    private BukkitTask sessionTimeoutTask;
+    
+    private Map<Location, Material> arenaBorderBlocks = new HashMap<>();
+    private Location arenaCorner1;
+    private Location arenaCorner2;
     
     private static final Set<Material> allowedMainhandItems = Set.of(
         Material.WOODEN_SWORD, Material.STONE_SWORD, Material.IRON_SWORD, Material.DIAMOND_SWORD, Material.NETHERITE_SWORD,
@@ -44,9 +63,9 @@ public class PvpSession {
         this.owner = owner;
         this.publicRoom = isPublic;
         this.players.add(owner);
+        startSessionTimeout();
     }
 
-    // Getter/Setter
     public Player getOwner() { return owner; }
     public boolean isPublicRoom() { return publicRoom; }
     public boolean isStarted() { return started; }
@@ -55,12 +74,12 @@ public class PvpSession {
     public Set<Player> getPlayers() { return players; }
     public Set<Player> getInvitedPlayers() { return invitedPlayers; }
     public void setStarted(boolean started) { this.started = started; }
+    public String getArenaRegionName() { return arenaRegionName; }
 
     public void addPlayer(Player player) { players.add(player); }
     public void addInvited(Player player) { invitedPlayers.add(player); }
     public void removePlayer(Player player) {
         players.remove(player);
-        playerChestLocations.remove(player);
     }
 
     public void broadcast(String message) {
@@ -85,19 +104,16 @@ public class PvpSession {
     
     private void assignTeams() {
         List<Player> shuffledPlayers = new ArrayList<>(players);
-        Collections.shuffle(shuffledPlayers); // Xáo trộn người chơi để phân phối công bằng
+        Collections.shuffle(shuffledPlayers);
 
-        // Chia thành 2 team
         for (Player p: players) {
             playerTeamMap.put(p, 1);
         }
-        // Có thể thêm hiệu ứng như màu da cho team
     }
 
     private void clearInventoryExceptWhitelist(Player player) {
         List<ItemStack> keep = new ArrayList<>();
 
-        // 1. Lưu các item ở slot 0-2 nếu trong allowedMainhandItems
         for (int i = 0; i < 3; i++) {
             ItemStack item = player.getInventory().getItem(i);
             if (item != null && allowedMainhandItems.contains(item.getType())) {
@@ -105,7 +121,6 @@ public class PvpSession {
             }
         }
 
-        // 2. Lưu offhand item
         ItemStack offhandItem = player.getInventory().getItemInOffHand();
         if (offhandItem != null && offhandItem.getType() != Material.AIR && allowedMainhandItems.contains(offhandItem.getType())) {
             offhandItem = offhandItem.clone();
@@ -113,7 +128,6 @@ public class PvpSession {
             offhandItem = null;
         }
 
-        // 3. Lưu armor contents
         ItemStack[] armorContents = player.getInventory().getArmorContents();
         ItemStack[] savedArmor = new ItemStack[armorContents.length];
         for (int i = 0; i < armorContents.length; i++) {
@@ -124,23 +138,19 @@ public class PvpSession {
             }
         }
 
-        // 4. Clear toàn bộ inventory
         player.getInventory().clear();
         player.getInventory().setArmorContents(new ItemStack[4]);
         player.getInventory().setItemInOffHand(null);
 
-        // 5. Restore lại slot 0-2
         int slot = 0;
         for (ItemStack item : keep) {
             player.getInventory().setItem(slot++, item);
         }
 
-        // 6. Restore lại offhand
         if (offhandItem != null) {
             player.getInventory().setItemInOffHand(offhandItem);
         }
 
-        // 7. Restore lại armor
         player.getInventory().setArmorContents(savedArmor);
     }
 
@@ -158,17 +168,33 @@ public class PvpSession {
 
     public void startCountdown() {
         countdownPhase = true;
+        if (sessionTimeoutTask != null) { 
+            sessionTimeoutTask.cancel();
+            sessionTimeoutTask = null;
+        }
         new BukkitRunnable() {
             int countdown = 10;
+            boolean isHeal = false;
             @Override
             public void run() {
+                // --- Đã sửa lỗi ở đây ---
+                // Kiểm tra nếu session không còn hoạt động (đã bị đóng hoặc không còn là active session này)
+                if (!PvpSessionManager.hasActiveSession() || PvpSessionManager.getActiveSession() != PvpSession.this) {
+                    cancel(); // Ngừng runnable
+                    return;
+                }
+                if (!isHeal) {
+                    isHeal = true;
+                    for (Player p : players) {
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 100, 9));
+                    }
+                }
+                // --- Hết sửa lỗi ---
+
                 if (countdown == 0) {
                     countdownPhase = false;
                     started = true;
-                    assignTeams(); // <--- Thêm dòng này để tạo team
-
-                     // 🛠 Teleport vào spot random
-
+                    assignTeams();
                     destroyChests();
                     broadcast("§cBẮT ĐẦU PvP!");
                     startRandomEvents();
@@ -176,7 +202,9 @@ public class PvpSession {
                     return;
                 }
                 for (Player player : players) {
-                    player.sendTitle("§eChuẩn bị!", "§f" + countdown + " giây", 0, 20, 0);
+                    if (player.isOnline()) {
+                        player.sendTitle("§eChuẩn bị!", "§f" + countdown + " giây", 0, 20, 0);
+                    }
                 }
                 countdown--;
             }
@@ -184,15 +212,37 @@ public class PvpSession {
     }
 
     private void teleportPlayersToArena() {
-        if (chosenArena == null) {
+        if (arenaRegionName == null) {
             chosenArena = dev.ktoxz.manager.TeleportManager.getRandomArena();
             if (chosenArena == null) {
                 broadcast("§cKhông tìm thấy Arena hợp lệ!");
                 return;
             }
+            arenaRegionName = chosenArena.getString("_id");
         }
 
-        List<Document> availableSpots = new ArrayList<>(chosenArena.getList("spots", Document.class));
+        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+        World world = Bukkit.getWorld("world");
+        if (world == null) {
+            broadcast("§cWorld không tồn tại.");
+            return;
+        }
+        RegionManager regionManager = container.get(BukkitAdapter.adapt(world));
+        if (regionManager == null) {
+            broadcast("§cKhông tìm thấy RegionManager!");
+            return;
+        }
+        ProtectedRegion region = regionManager.getRegion(arenaRegionName);
+        if (region == null) {
+            broadcast("§cKhông tìm thấy WorldGuard region với tên: " + arenaRegionName);
+            return;
+        }
+
+        List<Document> availableSpots = new ArrayList<>();
+        if (chosenArena != null && chosenArena.containsKey("spots")) {
+            availableSpots.addAll(chosenArena.getList("spots", Document.class));
+        }
+
         if (availableSpots.isEmpty()) {
             broadcast("§cArena không có chỗ spawn!");
             return;
@@ -212,15 +262,12 @@ public class PvpSession {
             int y = spot.getInteger("y");
             int z = spot.getInteger("z");
 
-            World world = Bukkit.getWorld("world");
-            if (world != null) {
-                player.teleport(new Location(world, x + 0.5, y, z + 0.5));
-            }
+            player.teleport(new Location(world, x + 0.5, y, z + 0.5));
         }
     }
 
 
-    private void destroyChests() {
+    void destroyChests() {
         for (Location loc : playerChestLocations.values()) {
             Block block = loc.getBlock();
             if (block.getType() == Material.CHEST) {
@@ -240,19 +287,43 @@ public class PvpSession {
                     cancel();
                     return;
                 }
-                if (chosenArena != null) {
-                    Document c1 = chosenArena.get("corner1", Document.class);
-                    Document c2 = chosenArena.get("corner2", Document.class);
 
-                    World world = Bukkit.getWorld("world"); // hoặc world riêng nếu bạn lưu world
-                    if (world != null && c1 != null && c2 != null) {
-                        Location loc1 = new Location(world, c1.getInteger("x"), c1.getInteger("y"), c1.getInteger("z"));
-                        Location loc2 = new Location(world, c2.getInteger("x"), c2.getInteger("y"), c2.getInteger("z"));
-                        RandomEvent.triggerRandomEvent(players, loc1, loc2, plugin);
-                    }
+                if (arenaRegionName == null || plugin.getServer().getPluginManager().getPlugin("WorldGuard") == null) {
+                    plugin.getLogger().warning("Không tìm thấy tên region hoặc WorldGuard! Không thể kích hoạt RandomEvent.");
+                    cancel();
+                    return;
                 }
+
+                RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                World world = Bukkit.getWorld("world");
+                if (world == null) {
+                    plugin.getLogger().warning("World không tồn tại! Không thể kích hoạt RandomEvent.");
+                    cancel();
+                    return;
+                }
+                RegionManager regionManager = container.get(BukkitAdapter.adapt(world));
+                if (regionManager == null) {
+                    plugin.getLogger().warning("Không tìm thấy RegionManager cho WorldGuard! Không thể kích hoạt RandomEvent.");
+                    cancel();
+                    return;
+                }
+
+                ProtectedRegion region = regionManager.getRegion(arenaRegionName);
+                if (region == null) {
+                    plugin.getLogger().warning("Không tìm thấy WorldGuard region với ID: " + arenaRegionName + "! Không thể kích hoạt RandomEvent.");
+                    cancel();
+                    return;
+                }
+
+                BlockVector3 minPoint = region.getMinimumPoint();
+                BlockVector3 maxPoint = region.getMaximumPoint();
+
+                Location loc1 = BukkitAdapter.adapt(world, minPoint);
+                Location loc2 = BukkitAdapter.adapt(world, maxPoint);
+
+                RandomEvent.triggerRandomEvent(players, loc1, loc2, plugin);
             }
-        }.runTaskTimer(plugin, 20 * 10L, 20 * 10L); // 10s lặp
+        }.runTaskTimer(plugin, 20 * 10L, 20 * 10L);
     }
 
 
@@ -329,5 +400,34 @@ public class PvpSession {
 
     public void setCountdownPhase(boolean countdownPhase) {
         this.countdownPhase = countdownPhase;
+    }
+
+    private void startSessionTimeout() {
+        sessionTimeoutTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!started) {
+                    broadcast("§cPhiên PvP đã hết thời gian chờ và tự động đóng.");
+                    PvpSessionManager.closeSession();
+                }
+            }
+        }.runTaskLater(plugin, 20L * 180);
+    }
+    
+    
+
+    public void cancelSessionTimeout() {
+        if (sessionTimeoutTask != null) {
+            sessionTimeoutTask.cancel();
+            sessionTimeoutTask = null;
+        }
+    }
+
+    private void buildArenaBorder() {
+        broadcast("§eTường chắn vô hình WorldGuard đang bảo vệ đấu trường!");
+    }
+
+    private void clearArenaBorder() {
+        broadcast("§aTường chắn WorldGuard vẫn còn hiệu lực (nếu có).");
     }
 }

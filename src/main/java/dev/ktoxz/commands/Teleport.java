@@ -107,6 +107,15 @@ public class Teleport implements CommandExecutor, TabCompleter {
             return;
         }
 
+        // --- THÊM LOGIC KIỂM TRA QUYỀN OP Ở ĐÂY ---
+        if (target.isOp()) {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                player.sendMessage("§cBạn không thể teleport đến người chơi có quyền OP.");
+            });
+            return;
+        }
+        // --- KẾT THÚC LOGIC KIỂM TRA QUYỀN OP ---
+
         if (!TeleportManager.isEnough(player)) {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 player.sendMessage("§cHết tiền roài.");
@@ -168,7 +177,4 @@ public class Teleport implements CommandExecutor, TabCompleter {
             }
         }, 0L, 20L); // mỗi 20 ticks (1 giây)
     }
-
-
-   
 }

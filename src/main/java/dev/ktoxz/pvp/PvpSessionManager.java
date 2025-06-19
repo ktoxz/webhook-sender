@@ -30,9 +30,13 @@ public class PvpSessionManager {
         activeSession = new PvpSession(plugin, owner, isPublic);
         registerPlayer(owner, activeSession);
     }
+    
+    
 
     public static void closeSession() {
         if (activeSession != null) {
+        	activeSession.destroyChests();
+            activeSession.cancelSessionTimeout(); // Hủy tác vụ timeout khi đóng phiên
             for (Player p : activeSession.getPlayers()) {
                 unregisterPlayer(p);
             }

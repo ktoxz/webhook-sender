@@ -46,7 +46,7 @@ commands:
 
   dual:
     description: Tạo phòng hoặc rủ ai vô đấm
-    usage: /dual <name>
+    usage: /dual [name...] [include_self (true | false)]
 
   join:
     description: Tham gia vào phòng đấm lộn
@@ -61,8 +61,8 @@ commands:
     usage: /cancel
 
   addArena:
-    description: Thêm chỗ
-    usage: /addArena <loc1> <loc2> <name>
+    description: Thêm tên WorldGuard region của arena
+    usage: /addArena <region_name>
     permission: ktoxz.addArena
     permission-message: Bạn không có quyền sử dụng lệnh này!
 
@@ -92,3 +92,7 @@ permissions:
   ktoxz.addArenaSpot:
     description: Abcd
     default: op
+
+  ktoxz.tp:
+    description: quyền teleport
+    default: true

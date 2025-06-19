@@ -86,31 +86,38 @@ public class ChestManager {
 
 
     static void fillChestWithItems(Inventory inv) {
-        int slot = 0;
-        int size = inv.getSize(); // lấy số lượng slot của rương
+        inv.clear(); // Xóa tất cả vật phẩm hiện có trong rương
 
-        for (Material material : weaponMaterials) {
-            if (slot >= size) break;
-            inv.setItem(slot++, createWeapon(material));
-        }
+        // 1. Kiếm sắt enchant Sharpness II
+        ItemStack ironSword = new ItemStack(Material.IRON_SWORD);
+        ironSword.addEnchantment(Enchantment.SHARPNESS, 2);
+        inv.setItem(0, ironSword); // Đặt vào slot đầu tiên
 
-        slot = Math.max(slot, 9);
-        for (Material material : utilityMaterials) {
-            if (slot >= size) break;
-            inv.setItem(slot++, createUtility(material));
-        }
+        // 2. Cung enchant Power II
+        ItemStack bow = new ItemStack(Material.BOW);
+        bow.addEnchantment(Enchantment.POWER, 2);
+        inv.setItem(1, bow);
 
-        slot = Math.max(slot, 18);
-        for (Material material : foodMaterials) {
-            if (slot >= size) break;
-            inv.setItem(slot++, createFood(material));
-        }
+        // 3. 64 mũi tên
+        ItemStack arrows = new ItemStack(Material.ARROW, 64);
+        inv.setItem(2, arrows);
 
-        slot = Math.max(slot, 27);
-        for (Material material : potionMaterials) {
-            if (slot >= size) break;
-            inv.setItem(slot++, createPotion(material));
-        }
+        // 4. Bộ giáp lưới
+        ItemStack chainHelmet = new ItemStack(Material.CHAINMAIL_HELMET);
+        inv.setItem(3, chainHelmet);
+
+        ItemStack chainChestplate = new ItemStack(Material.CHAINMAIL_CHESTPLATE);
+        inv.setItem(4, chainChestplate);
+
+        ItemStack chainLeggings = new ItemStack(Material.CHAINMAIL_LEGGINGS);
+        inv.setItem(5, chainLeggings);
+
+        ItemStack chainBoots = new ItemStack(Material.CHAINMAIL_BOOTS);
+        inv.setItem(6, chainBoots);
+
+        // 5. 1 Táo vàng
+        ItemStack goldenApple = new ItemStack(Material.GOLDEN_APPLE, 1);
+        inv.setItem(7, goldenApple);
     }
 
 
@@ -189,7 +196,6 @@ public class ChestManager {
             loc.getWorld().playSound(loc, Sound.BLOCK_CHEST_CLOSE, 1f, 0.8f); // Âm chest đóng lại
 
             // 3. Nhạc nền chiến đấu
-            player.stopSound(Sound.MUSIC_OVERWORLD_MEADOW); // Dừng nhạc nền cũ nếu có
             player.playSound(player.getLocation(), Sound.MUSIC_DISC_PIGSTEP, SoundCategory.MUSIC, 100f, 1f);
             // Hoặc chọn nhạc bạn thích: Pigstep (nether music), music intense
 

@@ -138,4 +138,16 @@ public class Mongo {
             return null;
         }
     }
+
+    // Thêm phương thức này để lấy collection "arena"
+    public MongoCollection<Document> getArenas() {
+        if (!isConnected || mongoClient == null) {
+            Connect(); // Đảm bảo kết nối được thiết lập
+            if (!isConnected) {
+                System.err.println("❌ Không thể kết nối MongoDB để lấy collection 'arena'.");
+                return null;
+            }
+        }
+        return mongoClient.getDatabase("minecraft").getCollection("arena"); // "minecraft" là tên database
+    }
 }

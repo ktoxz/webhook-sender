@@ -45,7 +45,7 @@ public class RandomEvent {
             new EventEntry(0.41, RandomEvent::nausea),
             new EventEntry(0.44, RandomEvent::slowFalling),
             new EventEntry(0.47, RandomEvent::instantDamage),
-            new EventEntry(0.48, RandomEvent::dropElytra),
+            new EventEntry(0.48, RandomEvent::windShower),
             new EventEntry(0.49, RandomEvent::dropTotem),
             new EventEntry(0.525, RandomEvent::dropGoldenApple),
             new EventEntry(0.5575, RandomEvent::dropIronSword),
@@ -81,7 +81,7 @@ public class RandomEvent {
         int maxX = Math.max(corner1.getBlockX(), corner2.getBlockX());
         int minZ = Math.min(corner1.getBlockZ(), corner2.getBlockZ());
         int maxZ = Math.max(corner1.getBlockZ(), corner2.getBlockZ());
-        int y = corner1.getBlockY();
+        int y = corner1.getBlockY()+1;
 
         int x = random.nextInt(maxX - minX + 1) + minX;
         int z = random.nextInt(maxZ - minZ + 1) + minZ;
@@ -109,7 +109,7 @@ public class RandomEvent {
 
     private static void dropIronSword(Set<Player> players) {
         for (Player p : players) {
-            ItemStack sword = new ItemStack(Material.IRON_SWORD);
+            ItemStack sword = new ItemStack(Material.DIAMOND_SWORD);
             sword.addUnsafeEnchantment(org.bukkit.enchantments.Enchantment.SHARPNESS, 10);
             ItemMeta meta = sword.getItemMeta();
             if (meta instanceof Damageable damageable) {
@@ -138,20 +138,35 @@ public class RandomEvent {
     }
 
     private static void customTntRain(Set<Player> players) {
-        for (int i = 0; i < 10; i++) {
-            Location loc = getRandomLocationInArena().add(0, 15, 0); // spawn trên cao
-            World world = loc.getWorld();
-            if (world == null) continue;
+        broadcastActionBar(players, "[ENVIRONMENT] 💣 Mưa TNT!");
 
-            // Tạo TNT thật
-            TNTPrimed tnt = (TNTPrimed) world.spawnEntity(loc, EntityType.TNT);
-            tnt.setFuseTicks(40); // 2 giây (40 ticks)
-            tnt.setYield(4.0f); // độ mạnh vụ nổ (mặc định là 4)
-            tnt.setIsIncendiary(false); // không gây cháy
-        }
+        new BukkitRunnable() {
+            int ticks = 0;
 
-        broadcastActionBar(players, "[ENVIRONMENT] Mưa TNT!");
+            @Override
+            public void run() {
+                if (ticks >= 10) {
+                    cancel();
+                    return;
+                }
+
+                int tntCount = 1 + new Random().nextInt(3); // 1 đến 4 TNT mỗi giây
+                for (int i = 0; i < tntCount; i++) {
+                    Location loc = getRandomLocationInArena().add(0, 15, 0);
+                    World world = loc.getWorld();
+                    if (world == null) continue;
+
+                    TNTPrimed tnt = (TNTPrimed) world.spawnEntity(loc, EntityType.TNT);
+                    tnt.setFuseTicks(40); // 2 giây nổ
+                    tnt.setYield(1.0f);
+                    tnt.setIsIncendiary(false);
+                }
+
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 20L); // Mỗi 1 giây (20 ticks)
     }
+
 
 
     private static void lightningStorm(Set<Player> players) {
@@ -183,18 +198,32 @@ public class RandomEvent {
 
 
     private static void meteorShower(Set<Player> players) {
-        for (int i = 0; i < 15; i++) {
-            Location loc = getRandomLocationInArena().add(0, 30, 0);
-            Fireball fb = loc.getWorld().spawn(loc, Fireball.class);
-            fb.setVelocity(new Vector(0, -1, 0));
-            fb.setIsIncendiary(true);
-            fb.setYield(2F);
-        }
-        
-        
-        
-        broadcastActionBar(players, "[ENVIRONMENT] Meteor Shower diễn ra!");
+        broadcastActionBar(players, "[ENVIRONMENT] ☄️ Meteor Shower diễn ra!");
+
+        new BukkitRunnable() {
+            int ticks = 0;
+
+            @Override
+            public void run() {
+                if (ticks >= 15) {
+                    cancel();
+                    return;
+                }
+
+                int fireballsThisTick = 2 + new Random().nextInt(4); // Random từ 2 đến 5
+                for (int i = 0; i < fireballsThisTick; i++) {
+                    Location loc = getRandomLocationInArena().add(0, 30, 0);
+                    Fireball fb = loc.getWorld().spawn(loc, Fireball.class);
+                    fb.setVelocity(new Vector(0, -1, 0));
+                    fb.setIsIncendiary(true);
+                    fb.setYield(2F);
+                }
+
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 20L); // chạy mỗi 20 tick = 1 giây
     }
+
 
 
 
@@ -229,17 +258,38 @@ public class RandomEvent {
         boolean storm = random.nextBoolean();
         world.setStorm(storm);
         world.setThundering(storm);
-        broadcastActionBar(players, storm ? "[ENVIRONMENT] Bắt đầu Mưa!" : "[ENVIRONMENT] Trời đẹp!");
+
+        broadcastActionBar(players, storm ? "[ENVIRONMENT] ⛈️ Bắt đầu Mưa!" : "[ENVIRONMENT] 🌤️ Trời đẹp!");
+
         new BukkitRunnable() {
-        	int countdown = 5;
+            int countdown = 5;
+
             @Override
             public void run() {
-                getRandomLocationInArena().getWorld().strikeLightning(getRandomLocationInArena());
-                if (countdown == 0) return;
+                if (countdown == 0) {
+                    cancel();
+                    return;
+                }
+
+                // Đánh sét ngẫu nhiên trong arena
+                for(int i=0;i<3; i++) {
+                    Location randomStrike = getRandomLocationInArena();
+                    randomStrike.getWorld().strikeLightning(randomStrike);
+                }
+
+
+                // 50% cơ hội đánh vào người chơi
+                if (!players.isEmpty() && Math.random() < 0.5) {
+                    Player[] arr = players.toArray(new Player[0]);
+                    Player target = arr[random.nextInt(arr.length)];
+                    target.getWorld().strikeLightning(target.getLocation());
+                }
+
                 countdown--;
             }
-        }.runTaskLater(plugin, 20 * 3); // Delay 3 giây (20 ticks * 3)
+        }.runTaskTimer(plugin, 20 * 3, 20); // Bắt đầu sau 3 giây, lặp lại mỗi 1 giây
     }
+
 
     private static void chickenArmy(Set<Player> players) {
         List<Chicken> chickens = new ArrayList<>();
@@ -264,6 +314,7 @@ public class RandomEvent {
                         Location loc = chicken.getLocation();
 
                         // 50% bắn pháo hoa, 50% phát nổ như creeper
+                        chicken.remove();
                         if (random.nextBoolean()) {
                             // Pháo hoa
                             Firework fw = (Firework) loc.getWorld().spawnEntity(loc, EntityType.FIREWORK_ROCKET);
@@ -282,7 +333,7 @@ public class RandomEvent {
                             loc.getWorld().createExplosion(loc, 2.0f, false, false); // power 2, không đốt, không phá block
                         }
 
-                        chicken.remove();
+                        
                     }
                 }
 
@@ -305,9 +356,39 @@ public class RandomEvent {
         firework.setFireworkMeta(meta);
     }
 
+    private static void windShower(Set<Player> players) {
+        broadcastActionBar(players, "[ENVIRONMENT] 💨 Cơn mưa gió cuốn tới!");
+
+        new BukkitRunnable() {
+            int ticks = 0;
+
+            @Override
+            public void run() {
+                if (ticks >= 10) {
+                    cancel();
+                    return;
+                }
+
+                int amount = 3 + new Random().nextInt(4); // 3–6 quả wind charge mỗi giây
+                for (int i = 0; i < amount; i++) {
+                    Location loc = getRandomLocationInArena().add(0, 20, 0);
+                    World world = loc.getWorld();
+
+                    if (world == null) continue;
+
+                    // Chỉ có trong Minecraft 1.21+
+                    Entity entity = world.spawnEntity(loc, EntityType.BREEZE_WIND_CHARGE);
+                    entity.setVelocity(new Vector(0, -1, 0)); // rơi xuống như mưa
+                }
+
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 20L); // mỗi giây
+    }
+
 
     private static void fireworkShow(Set<Player> players) {
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 3; i++) {
             Location loc = getRandomLocationInArena().add(0, 2, 0);
             Firework fw = (Firework) loc.getWorld().spawnEntity(loc, EntityType.FIREWORK_ROCKET);
             FireworkMeta meta = fw.getFireworkMeta();
