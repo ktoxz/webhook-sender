@@ -91,52 +91,6 @@ public class PvpSessionListener implements Listener {
         }
     }
 
-
-    
-    @EventHandler
-    public void onItemDrop(PlayerDropItemEvent event) {
-        Player player = event.getPlayer();
-        Location dropLoc = player.getLocation();
-
-        // Chặn người trong trận không được vứt đồ trong thời gian đếm ngược hoặc đang PvP
-        if (PvpSessionManager.isInSession(player)) {
-            PvpSession session = PvpSessionManager.getSession(player);
-            if (session != null && (session.isStarted() || session.isCountdownPhase())) {
-                event.setCancelled(true);
-                player.sendMessage("§cKhông được vứt đồ trong đấu trường PvP!");
-                return;
-            }
-        }
-
-        // Nếu có session đang hoạt động, chặn vứt đồ khi đứng ngoài đấu trường
-        if (PvpSessionManager.hasActiveSession()) {
-            PvpSession session = PvpSessionManager.getActiveSession();
-            String regionName = session.getArenaRegionName();
-
-            if (regionName != null) {
-                RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                RegionManager regionManager = container.get(BukkitAdapter.adapt(dropLoc.getWorld()));
-
-                if (regionManager != null) {
-                    ProtectedRegion region = regionManager.getRegion(regionName);
-                    if (region != null) {
-                        BlockVector3 vec = BlockVector3.at(dropLoc.getBlockX(), dropLoc.getBlockY(), dropLoc.getBlockZ());
-
-                        // Nếu người chơi KHÔNG thuộc vùng đấu → huỷ
-                        if (!region.contains(vec)) {
-                            event.setCancelled(true);
-                            player.sendMessage("§cBạn không thể vứt đồ ra ngoài khu vực đấu trường!");
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    
-    
-
-
 	@EventHandler
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 	    if (!(sender instanceof Player player)) {
