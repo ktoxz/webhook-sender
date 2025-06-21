@@ -8,6 +8,7 @@ import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import dev.ktoxz.commands.*;
 import dev.ktoxz.db.Mongo;
 import dev.ktoxz.listener.ChestListener;
+import dev.ktoxz.listener.PvpSessionListener;
 import dev.ktoxz.manager.ItemPriceCache;
 import dev.ktoxz.pvp.*;
 
@@ -19,6 +20,7 @@ public class KtoxzWebhook extends JavaPlugin {
     public void onEnable() {
     	 ChestManager.init(this);
     	 PvpSessionManager.init(this);
+    	 PvpEventManager.init(this);
     	// Lấy WorldGuardPlugin instance
          worldGuardPlugin = (WorldGuardPlugin) getServer().getPluginManager().getPlugin("WorldGuard");
          if (worldGuardPlugin == null) {

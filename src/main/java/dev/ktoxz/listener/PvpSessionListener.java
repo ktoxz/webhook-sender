@@ -1,4 +1,4 @@
-package dev.ktoxz.pvp;
+package dev.ktoxz.listener;
 
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -9,6 +9,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerShearEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -22,6 +23,8 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldedit.math.BlockVector3; // Thêm import này
 import dev.ktoxz.main.KtoxzWebhook; // Import plugin chính để lấy WorldGuardPlugin
+import dev.ktoxz.pvp.PvpSession;
+import dev.ktoxz.pvp.PvpSessionManager;
 
 public class PvpSessionListener implements Listener {
 
@@ -76,6 +79,14 @@ public class PvpSessionListener implements Listener {
             // --- Đã sửa lỗi ở đây ---
             // Tạo một BlockVector3 từ tọa độ khối của Location
             BlockVector3 toBlockVector = BlockVector3.at(to.getBlockX(), to.getBlockY(), to.getBlockZ());
+            
+            if (!PvpSessionManager.isInSession(player) && arenaRegion.contains(toBlockVector)) {
+                event.setCancelled(true);
+                player.sendMessage("§cBạn không được phép vào khu vực đấu trường PvP!");
+                player.teleport(event.getFrom());
+                return;
+            }
+            
             if (!arenaRegion.contains(toBlockVector)) {
             // --- Hết sửa lỗi ---
                 event.setCancelled(true);
@@ -85,6 +96,49 @@ public class PvpSessionListener implements Listener {
             }
         }
     }
+    
+    @EventHandler
+    public void onItemDrop(PlayerDropItemEvent event) {
+        Player player = event.getPlayer();
+        Location dropLoc = player.getLocation();
+
+        // Chặn người trong trận không được vứt đồ trong thời gian đếm ngược hoặc đang PvP
+        if (PvpSessionManager.isInSession(player)) {
+            PvpSession session = PvpSessionManager.getSession(player);
+            if (session != null && (session.isStarted() || session.isCountdownPhase())) {
+                event.setCancelled(true);
+                player.sendMessage("§cKhông được vứt đồ trong đấu trường PvP!");
+                return;
+            }
+        }
+
+        // Nếu có session đang hoạt động, chặn vứt đồ khi đứng ngoài đấu trường
+        if (PvpSessionManager.hasActiveSession()) {
+            PvpSession session = PvpSessionManager.getActiveSession();
+            String regionName = session.getArenaRegionName();
+
+            if (regionName != null) {
+                RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                RegionManager regionManager = container.get(BukkitAdapter.adapt(dropLoc.getWorld()));
+
+                if (regionManager != null) {
+                    ProtectedRegion region = regionManager.getRegion(regionName);
+                    if (region != null) {
+                        BlockVector3 vec = BlockVector3.at(dropLoc.getBlockX(), dropLoc.getBlockY(), dropLoc.getBlockZ());
+
+                        // Nếu người chơi KHÔNG thuộc vùng đấu → huỷ
+                        if (!region.contains(vec)) {
+                            event.setCancelled(true);
+                            player.sendMessage("§cBạn không thể vứt đồ ra ngoài khu vực đấu trường!");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    
+    
 
 
 	@EventHandler
@@ -214,6 +268,7 @@ public class PvpSessionListener implements Listener {
 	        }
 	    }
 	}
+	
 
 	private int countInventoryAfterTaking(Player player, ItemStack newItem) {
 	    int count = 0;

@@ -10,7 +10,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -19,23 +18,6 @@ import java.util.*;
 public class ChestManager {
 
     private static final Map<UUID, Block> playerChests = new HashMap<>();
-    private static final Random random = new Random();
-
-    private static final Set<Material> weaponMaterials = Set.of(
-            Material.IRON_SWORD, Material.IRON_AXE, Material.BOW, Material.TRIDENT
-    );
-
-    private static final Set<Material> utilityMaterials = Set.of(
-            Material.ENDER_PEARL, Material.FIRE_CHARGE, Material.WIND_CHARGE
-    );
-
-    private static final Set<Material> foodMaterials = Set.of(
-            Material.GOLDEN_APPLE, Material.BAKED_POTATO, Material.GOLDEN_CARROT
-    );
-
-    private static final Set<Material> potionMaterials = Set.of(
-            Material.POTION, Material.SPLASH_POTION
-    );
 
    
 
@@ -121,37 +103,6 @@ public class ChestManager {
     }
 
 
-    private static ItemStack createWeapon(Material material) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            if (material.toString().contains("SWORD") || material.toString().contains("AXE")) {
-                meta.addEnchant(Enchantment.SHARPNESS, 1, true);
-            } else if (material == Material.BOW) {
-                meta.addEnchant(Enchantment.POWER, 1, true);
-            } else if (material == Material.TRIDENT) {
-                meta.addEnchant(Enchantment.LOYALTY, 1, true);
-            }
-            item.setItemMeta(meta);
-        }
-        return item;
-    }
-
-    private static ItemStack createUtility(Material material) {
-        if (material == Material.ENDER_PEARL) return new ItemStack(material, 10);
-        if (material == Material.FIRE_CHARGE) return new ItemStack(material, 64);
-        return new ItemStack(material, 1);
-    }
-
-    private static ItemStack createFood(Material material) {
-        if (material == Material.GOLDEN_APPLE) return new ItemStack(material, 2);
-        if (material == Material.GOLDEN_CARROT) return new ItemStack(material, 6);
-        return new ItemStack(material, 15);
-    }
-
-    private static ItemStack createPotion(Material material) {
-        return new ItemStack(material, 1);
-    }
 
 
     private static void startCountdown(Player player) {
@@ -211,7 +162,6 @@ public class ChestManager {
         if (event.getCurrentItem() == null) return;
 
         Inventory clickedInventory = event.getClickedInventory();
-        ItemStack clickedItem = event.getCurrentItem();
 
         // Kiểm tra nếu inventory đang mở là rương PvP (là chest và đang lấy đồ)
         if (clickedInventory.getType() == org.bukkit.event.inventory.InventoryType.CHEST) {

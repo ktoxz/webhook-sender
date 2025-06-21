@@ -86,4 +86,8 @@ public class PvpSessionManager {
 //            }
         }
     }
+    
+    public static PvpSession getSession() {
+    	return activeSession;
+    }
 }

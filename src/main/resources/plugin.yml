@@ -1,4 +1,4 @@
-name: KtoxzWebhook
+name: KtoxzPlugin
 main: dev.ktoxz.main.KtoxzWebhook
 version: 1.2.6
 api-version: 1.20

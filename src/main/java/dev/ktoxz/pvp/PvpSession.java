@@ -1,16 +1,13 @@
 package dev.ktoxz.pvp;
 
-import dev.ktoxz.manager.TeleportManager;
 import org.bson.Document;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -23,7 +20,6 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldedit.math.BlockVector3;
-import dev.ktoxz.main.KtoxzWebhook;
 
 
 import java.util.*;
@@ -43,13 +39,10 @@ public class PvpSession {
     private boolean isOver = false;
     private Document chosenArena = null;
     private String arenaRegionName;
-    private int teamCounter = 0;
     private Map<Player, Integer> playerTeamMap = new HashMap<>();
     private BukkitTask sessionTimeoutTask;
     
-    private Map<Location, Material> arenaBorderBlocks = new HashMap<>();
-    private Location arenaCorner1;
-    private Location arenaCorner2;
+    private static Location loc1, loc2;
     
     private static final Set<Material> allowedMainhandItems = Set.of(
         Material.WOODEN_SWORD, Material.STONE_SWORD, Material.IRON_SWORD, Material.DIAMOND_SWORD, Material.NETHERITE_SWORD,
@@ -58,12 +51,30 @@ public class PvpSession {
         Material.FISHING_ROD, Material.FLINT_AND_STEEL, Material.SHEARS, Material.SNOWBALL, Material.MACE, Material.WIND_CHARGE
     );
 
-    public PvpSession(Plugin plugin, Player owner, boolean isPublic) {
+    public PvpSession(Plugin plugin, Player owner, boolean isPublic, boolean includeSelf) {
+        // Khởi tạo các trường final với tham số
         this.plugin = plugin;
         this.owner = owner;
         this.publicRoom = isPublic;
-        this.players.add(owner);
-        startSessionTimeout();
+
+
+        // Khởi tạo các trạng thái ban đầu
+        this.started = false;
+        this.countdownPhase = false;
+        this.isOver = false;
+
+        // Logic bao gồm người tạo phòng
+        if (includeSelf) {
+            this.players.add(owner);
+        }
+        
+        
+        startSessionTimeout(); // Bắt đầu đếm ngược thời gian chờ phiên
+    }
+
+    // Constructor phụ trợ, gọi constructor chính với includeSelf mặc định là true
+    public PvpSession(Plugin plugin, Player owner, boolean isPublic) {
+        this(plugin, owner, isPublic, true);
     }
 
     public Player getOwner() { return owner; }
@@ -173,7 +184,7 @@ public class PvpSession {
             sessionTimeoutTask = null;
         }
         new BukkitRunnable() {
-            int countdown = 10;
+            int countdown = 20;
             boolean isHeal = false;
             @Override
             public void run() {
@@ -214,6 +225,7 @@ public class PvpSession {
     private void teleportPlayersToArena() {
         if (arenaRegionName == null) {
             chosenArena = dev.ktoxz.manager.TeleportManager.getRandomArena();
+            
             if (chosenArena == null) {
                 broadcast("§cKhông tìm thấy Arena hợp lệ!");
                 return;
@@ -318,10 +330,10 @@ public class PvpSession {
                 BlockVector3 minPoint = region.getMinimumPoint();
                 BlockVector3 maxPoint = region.getMaximumPoint();
 
-                Location loc1 = BukkitAdapter.adapt(world, minPoint);
-                Location loc2 = BukkitAdapter.adapt(world, maxPoint);
+                loc1 = BukkitAdapter.adapt(world, minPoint);
+                loc2 = BukkitAdapter.adapt(world, maxPoint);
 
-                RandomEvent.triggerRandomEvent(players, loc1, loc2, plugin);
+                PvpEventManager.triggerRandomEvent(players);
             }
         }.runTaskTimer(plugin, 20 * 10L, 20 * 10L);
     }
@@ -423,11 +435,18 @@ public class PvpSession {
         }
     }
 
-    private void buildArenaBorder() {
-        broadcast("§eTường chắn vô hình WorldGuard đang bảo vệ đấu trường!");
+    public Location getRandomLocationInArena() {
+    	Random random = new Random();
+        int minX = Math.min(loc1.getBlockX(), loc2.getBlockX());
+        int maxX = Math.max(loc1.getBlockX(), loc2.getBlockX());
+        int minZ = Math.min(loc1.getBlockZ(), loc2.getBlockZ());
+        int maxZ = Math.max(loc1.getBlockZ(), loc2.getBlockZ());
+        int y = loc1.getBlockY()+1;
+
+        int x = random.nextInt(maxX - minX + 1) + minX;
+        int z = random.nextInt(maxZ - minZ + 1) + minZ;
+
+        return new Location(loc1.getWorld(), x, y, z);
     }
 
-    private void clearArenaBorder() {
-        broadcast("§aTường chắn WorldGuard vẫn còn hiệu lực (nếu có).");
-    }
 }
