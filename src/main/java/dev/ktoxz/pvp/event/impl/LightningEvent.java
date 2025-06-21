@@ -8,27 +8,30 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import dev.ktoxz.pvp.PvpSessionManager;
 import dev.ktoxz.pvp.event.PvpEvent;
 
 public class LightningEvent extends PvpEvent{
 
-	public LightningEvent(Plugin plugin) {
-		super("Sấm chớp", "Sấm chớp đùng đùng", plugin);
-	}
+    // Không cần activeTasks ở đây nữa, nó đã ở PvpEvent
+    // private final List<BukkitTask> activeTasks = new ArrayList<>();
 
-	@Override
-	public void trigger(Set<Player> players) {
-		World world = PvpSessionManager.getActiveSession().getRandomLocationInArena().getWorld();
-		
+    public LightningEvent(Plugin plugin) {
+        super("Sấm chớp", "Sấm chớp đùng đùng", plugin);
+    }
+
+    @Override
+    public void trigger(Set<Player> players) {
+        World world = PvpSessionManager.getActiveSession().getRandomLocationInArena().getWorld();
+
         WeatherType oldWeather = world.hasStorm() ? WeatherType.DOWNFALL : WeatherType.CLEAR;
 
-        // Bắt đầu bão
         world.setStorm(true);
         broadcastActionBar(players, "[ENVIRONMENT] ⚡ Lightning Storm đang diễn ra!");
 
-        new BukkitRunnable() {
+        BukkitTask task = new BukkitRunnable() {
             int count = 0;
 
             @Override
@@ -44,13 +47,13 @@ public class LightningEvent extends PvpEvent{
                 world.strikeLightning(strikeLoc);
                 count++;
             }
-        }.runTaskTimer(plugin, 0L, 20L); // 20 ticks = 1 giây		
-	}
+        }.runTaskTimer(plugin, 0L, 20L);
+        activeTasks.add(task); // Rút gọn: chỉ cần add thẳng vào activeTasks của lớp cha
+    }
 
-	@Override
-	public void onEndMatch() {
-		// TODO Auto-generated method stub
-		
-	}
-
+    // Không cần onEndMatch() nữa nếu không có logic cụ thể nào khác
+    // @Override
+    // public void onEndMatch() {
+    //     super.onEndMatch(); // Gọi phương thức của lớp cha để hủy tác vụ
+    // }
 }

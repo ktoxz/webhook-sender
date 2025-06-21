@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import dev.ktoxz.pvp.PvpSessionManager;
@@ -55,7 +56,7 @@ public class ShowerEvent extends PvpEvent {
                                         int totalTicks, int minPerTick, int maxPerTick, int delayTicks) {
         broadcastActionBar(players, msg(message));
 
-        new BukkitRunnable() {
+        BukkitTask task = new BukkitRunnable() {
             int ticks = 0;
             final Random rand = new Random();
 
@@ -77,13 +78,15 @@ public class ShowerEvent extends PvpEvent {
                 }
             }
         }.runTaskTimer(plugin, 0L, delayTicks);
+        activeTasks.add(task); // Rút gọn: chỉ cần add thẳng vào activeTasks của lớp cha
+
     }
 
     // === Mưa TNT ===
     private static void customTntRain(Set<Player> players, Plugin plugin) {
         broadcastActionBar(players, msg("💣 Mưa TNT!"));
 
-        new BukkitRunnable() {
+        BukkitTask task = new BukkitRunnable() {
             int ticks = 0;
             final Random rand = new Random();
 
@@ -107,13 +110,15 @@ public class ShowerEvent extends PvpEvent {
                 }
             }
         }.runTaskTimer(plugin, 0L, 20L);
+        activeTasks.add(task); // Rút gọn: chỉ cần add thẳng vào activeTasks của lớp cha
+
     }
 
     // === Mưa thiên thạch ===
     private static void meteorShower(Set<Player> players, Plugin plugin) {
         broadcastActionBar(players, msg("☄️ Meteor Shower diễn ra!"));
 
-        new BukkitRunnable() {
+        BukkitTask task = new BukkitRunnable() {
             int ticks = 0;
             final Random rand = new Random();
 
@@ -134,6 +139,8 @@ public class ShowerEvent extends PvpEvent {
                 }
             }
         }.runTaskTimer(plugin, 0L, 20L);
+        activeTasks.add(task); // Rút gọn: chỉ cần add thẳng vào activeTasks của lớp cha
+
     }
     
     private static void randomPotionRain(Set<Player> players, Plugin plugin) {
@@ -149,7 +156,7 @@ public class ShowerEvent extends PvpEvent {
             org.bukkit.potion.PotionEffectType.WEAKNESS
         );
 
-        new BukkitRunnable() {
+        BukkitTask task = new BukkitRunnable() {
             int ticks = 0;
             final Random rand = new Random();
 
@@ -178,6 +185,8 @@ public class ShowerEvent extends PvpEvent {
                 }
             }
         }.runTaskTimer(plugin, 0L, 20L);
+        activeTasks.add(task); // Rút gọn: chỉ cần add thẳng vào activeTasks của lớp cha
+
     }
 
     private static String msg(String m) {

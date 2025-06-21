@@ -28,9 +28,9 @@ public class PvpEventManager {
 //        registerEvent(new DropEvent(pl));
 //        registerEvent(new EffectEvent(pl));
 //        registerEvent(new FunEvent(pl));
-        registerEvent(new LightningEvent(pl));
-        registerEvent(new PitfallTrapEvent(pl));
-        registerEvent(new ShowerEvent(pl));
+//        registerEvent(new LightningEvent(pl));
+//        registerEvent(new PitfallTrapEvent(pl));
+//        registerEvent(new ShowerEvent(pl));
         registerEvent(new SummonEvent(pl));
 
     }
@@ -52,7 +52,11 @@ public class PvpEventManager {
     }
 
     public static void clearEvents() {
-        registeredEvents.clear();
+    	for(PvpEvent e: registeredEvents) {
+            plugin.getLogger().info("Đang hủy "+e.getName());
+
+    		e.onEndMatch();
+    	}
     }
     
     

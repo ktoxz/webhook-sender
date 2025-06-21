@@ -448,5 +448,24 @@ public class PvpSession {
 
         return new Location(loc1.getWorld(), x, y, z);
     }
+    
+    public Location getRandomLocationGround() {
+        Random random = new Random();
+        int minX = Math.min(loc1.getBlockX(), loc2.getBlockX());
+        int maxX = Math.max(loc1.getBlockX(), loc2.getBlockX());
+        int minZ = Math.min(loc1.getBlockZ(), loc2.getBlockZ());
+        int maxZ = Math.max(loc1.getBlockZ(), loc2.getBlockZ());
+        World world = loc1.getWorld();
+
+        // Chọn ngẫu nhiên X và Z trong vùng arena
+        int x = random.nextInt(maxX - minX + 1) + minX;
+        int z = random.nextInt(maxZ - minZ + 1) + minZ;
+
+        // Lấy Y là block cao nhất tại vị trí đó
+        int y = world.getHighestBlockYAt(x, z);
+
+        return new Location(world, x + 0.5, y, z + 0.5); // 0.5 để đứng chính giữa block
+    }
+
 
 }

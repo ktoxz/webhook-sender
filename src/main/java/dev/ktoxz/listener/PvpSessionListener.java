@@ -37,65 +37,61 @@ public class PvpSessionListener implements Listener {
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
+        Location from = event.getFrom();
+        Location to = event.getTo();
+        if (to == null) return;
 
-        if (!PvpSessionManager.isInSession(player)) return;
+        // Lấy WorldGuard region
+        if(!PvpSessionManager.hasStartedSession()) return;
+        String arenaRegionName = PvpSessionManager.getActiveSession().getArenaRegionName();
+        if (plugin.getWorldGuardPlugin() == null) {
+            plugin.getLogger().warning("WorldGuard plugin chưa sẵn sàng.");
+            return;
+        }
+
+        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+        RegionManager regionManager = container.get(BukkitAdapter.adapt(to.getWorld()));
+        if (regionManager == null) return;
+
+        ProtectedRegion arenaRegion = regionManager.getRegion(arenaRegionName);
+        if (arenaRegion == null) {
+            plugin.getLogger().warning("Không tìm thấy region với tên: " + arenaRegionName);
+            return;
+        }
+
+        BlockVector3 toBlock = BlockVector3.at(to.getBlockX(), to.getBlockY(), to.getBlockZ());
+        BlockVector3 fromBlock = BlockVector3.at(from.getBlockX(), from.getBlockY(), from.getBlockZ());
+
+        boolean isMovingIntoRegion = !arenaRegion.contains(fromBlock) && arenaRegion.contains(toBlock);
+        boolean isMovingOutOfRegion = arenaRegion.contains(fromBlock) && !arenaRegion.contains(toBlock);
+
+        // Nếu không ở trong session mà cố đi vào đấu trường → cấm
         PvpSession session = PvpSessionManager.getSession(player);
+        if (session == null) {
+            if (isMovingIntoRegion) {
+                event.setCancelled(true);
+                player.sendMessage("§cBạn không thể vào đấu trường PvP!");
+            }
+            return;
+        }
 
-        if (session == null) return;
-
-        // 👉 Chỉ chặn move nếu đang trong countdownPhase hoặc đã bắt đầu trận đấu
+        // Nếu đang đếm ngược, không cho di chuyển dù ở trong vùng
         if (session.isCountdownPhase()) {
-            if (event.getFrom().getX() != event.getTo().getX() || event.getFrom().getZ() != event.getTo().getZ()) {
+            if (from.getX() != to.getX() || from.getZ() != to.getZ()) {
                 event.setCancelled(true);
             }
-        } else if (session.isStarted()) {
-            // Kiểm tra WorldGuard region khi trận đấu đã bắt đầu
-            Location to = event.getTo();
-            if (to == null) return; // Đảm bảo to location không null
+            return;
+        }
 
-            String arenaRegionName = session.getArenaRegionName();
-            if (arenaRegionName == null || plugin.getWorldGuardPlugin() == null) {
-                // Log lỗi hoặc thông báo nếu không có region name hoặc WorldGuard không được tìm thấy
-                plugin.getLogger().warning("Không tìm thấy tên region hoặc WorldGuard! Không thể kiểm tra vùng PvP.");
-                return;
-            }
-
-            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-            RegionManager regionManager = container.get(BukkitAdapter.adapt(to.getWorld()));
-
-            if (regionManager == null) {
-                plugin.getLogger().warning("Không tìm thấy RegionManager cho world " + to.getWorld().getName());
-                return;
-            }
-
-            ProtectedRegion arenaRegion = regionManager.getRegion(arenaRegionName);
-
-            if (arenaRegion == null) {
-                plugin.getLogger().warning("Không tìm thấy WorldGuard region với ID: " + arenaRegionName);
-                return;
-            }
-
-            // Kiểm tra nếu người chơi di chuyển ra ngoài region
-            // --- Đã sửa lỗi ở đây ---
-            // Tạo một BlockVector3 từ tọa độ khối của Location
-            BlockVector3 toBlockVector = BlockVector3.at(to.getBlockX(), to.getBlockY(), to.getBlockZ());
-            
-            if (!PvpSessionManager.isInSession(player) && arenaRegion.contains(toBlockVector)) {
-                event.setCancelled(true);
-                player.sendMessage("§cBạn không được phép vào khu vực đấu trường PvP!");
-                player.teleport(event.getFrom());
-                return;
-            }
-            
-            if (!arenaRegion.contains(toBlockVector)) {
-            // --- Hết sửa lỗi ---
-                event.setCancelled(true);
-                player.sendMessage("§cBạn không thể ra khỏi đấu trường PvP!");
-                // Teleport người chơi về vị trí cũ hoặc vào giữa arena
-                player.teleport(event.getFrom());
-            }
+        // Nếu trận đã bắt đầu, không cho ra ngoài
+        if (session.isStarted() && isMovingOutOfRegion) {
+            event.setCancelled(true);
+            player.sendMessage("§cBạn không thể rời khỏi đấu trường PvP!");
+            player.teleport(from);
         }
     }
+
+
     
     @EventHandler
     public void onItemDrop(PlayerDropItemEvent event) {

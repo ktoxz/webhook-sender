@@ -9,6 +9,7 @@ import org.bukkit.entity.*;
 import org.bukkit.loot.Lootable;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import dev.ktoxz.pvp.PvpSessionManager;
 import dev.ktoxz.pvp.event.PvpEvent;
@@ -17,8 +18,10 @@ public class SummonEvent extends PvpEvent {
 
     private final Random random = new Random();
     private final List<Entity> summonedEntities = new ArrayList<>();
+    // Không cần activeTasks ở đây nữa, nó đã ở PvpEvent
+    // private final List<BukkitTask> activeTasks = new ArrayList<>();
 
-    private static final List<SummonStrategy> ALL_SUMMONS = List.of(
+    private final List<SummonStrategy> ALL_SUMMONS = List.of(
         SummonEvent::summonShulkerRain,
         SummonEvent::summonSkeletonOnBee,
         SummonEvent::summonEvokerFangsSpam
@@ -44,6 +47,7 @@ public class SummonEvent extends PvpEvent {
             }
         }
         summonedEntities.clear();
+        super.onEndMatch(); // Gọi phương thức của lớp cha để hủy tác vụ
     }
 
     @FunctionalInterface
@@ -53,11 +57,11 @@ public class SummonEvent extends PvpEvent {
 
     // ===== TRIỆU HỒI =====
 
-    private static void summonShulkerRain(Set<Player> players, List<Entity> summonedEntities) {
+    private static void summonShulkerRain(Set<Player> players, List<Entity> summonedEntities) { // Giữ static
         broadcastActionBar(players, "[SUMMON] ☠️ Shulker mưa đạn xuất hiện!");
 
         for (int i = 0; i < 3; i++) {
-            Location loc = PvpSessionManager.getActiveSession().getRandomLocationInArena().add(0, 1, 0);
+            Location loc = PvpSessionManager.getActiveSession().getRandomLocationGround().add(0, 1, 0);
             World world = loc.getWorld();
             if (world == null) continue;
 
@@ -67,30 +71,30 @@ public class SummonEvent extends PvpEvent {
         }
     }
 
-    private static void summonSkeletonOnBee(Set<Player> players, List<Entity> summonedEntities) {
+    private static void summonSkeletonOnBee(Set<Player> players, List<Entity> summonedEntities) { // Giữ static
         broadcastActionBar(players, "[SUMMON] 🐝 Skeleton cưỡi ong đã xuất hiện!");
         for (int i = 0; i < 3; i++) {
-	        Location loc = PvpSessionManager.getActiveSession().getRandomLocationInArena();
-	        World world = loc.getWorld();
-	        if (world == null) return;
-	
-	        Bee bee = (Bee) world.spawnEntity(loc, EntityType.BEE);
-	        Skeleton skeleton = (Skeleton) world.spawnEntity(loc, EntityType.SKELETON);
-	
-	        makeWeak(bee);
-	        makeWeak(skeleton);
-	
-	        bee.addPassenger(skeleton);
-	
-	        summonedEntities.add(bee);
-	        summonedEntities.add(skeleton);
+            Location loc = PvpSessionManager.getActiveSession().getRandomLocationInArena();
+            World world = loc.getWorld();
+            if (world == null) return;
+
+            Bee bee = (Bee) world.spawnEntity(loc, EntityType.BEE);
+            Skeleton skeleton = (Skeleton) world.spawnEntity(loc, EntityType.SKELETON);
+
+            makeWeak(bee);
+            makeWeak(skeleton);
+
+            bee.addPassenger(skeleton);
+
+            summonedEntities.add(bee);
+            summonedEntities.add(skeleton);
         }
     }
 
-    private static void summonEvokerFangsSpam(Set<Player> players, List<Entity> summonedEntities) {
+    private static void summonEvokerFangsSpam(Set<Player> players, List<Entity> summonedEntities) { // Chuyển non-static
         broadcastActionBar(players, "[SUMMON] 🌀 Evoker đang triệu hồi móng vuốt liên tục!");
 
-        new BukkitRunnable() {
+        BukkitTask task = new BukkitRunnable() {
             int ticks = 0;
             final Random rand = new Random();
 
@@ -104,8 +108,7 @@ public class SummonEvent extends PvpEvent {
                 for (int i = 0; i < 7 + rand.nextInt(2); i++) {
                     Location randomLoc = 
                         PvpSessionManager.getActiveSession()
-                            .getRandomLocationInArena()
-                            .add(0, 20 + rand.nextInt(10), 0)
+                            .getRandomLocationGround()
                     ;
 
                     EvokerFangs fang = (EvokerFangs) randomLoc.getWorld().spawnEntity(randomLoc, EntityType.EVOKER_FANGS);
@@ -124,18 +127,16 @@ public class SummonEvent extends PvpEvent {
 
                 ticks++;
             }
-        }.runTaskTimer(plugin, 0L, 20L); // chạy mỗi giây
+        }.runTaskTimer(plugin, 0L, 20L);
+        activeTasks.add(task); // Rút gọn
     }
-
 
     // ===== HỖ TRỢ =====
 
     private static void makeWeak(LivingEntity entity) {
-        entity.getAttribute(Attribute.MAX_HEALTH).setBaseValue(4.0); // 2 hit chết
+        entity.getAttribute(Attribute.MAX_HEALTH).setBaseValue(4.0);
         entity.setHealth(4.0);
         entity.setRemoveWhenFarAway(false);
-        ((Lootable) entity).setLootTable(null); // Không rơi đồ
+        ((Lootable) entity).setLootTable(null);
     }
-
-    
 }

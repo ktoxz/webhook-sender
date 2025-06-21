@@ -20,6 +20,11 @@ public class PvpSessionManager {
     public static boolean hasActiveSession() {
         return activeSession != null;
     }
+    
+    public static boolean hasStartedSession() {
+    	if(activeSession == null) return false;
+    	return activeSession.isStarted();
+    }
 
     public static PvpSession getActiveSession() {
         return activeSession;
@@ -34,6 +39,7 @@ public class PvpSessionManager {
     
 
     public static void closeSession() {
+    	PvpEventManager.clearEvents();
         if (activeSession != null) {
         	activeSession.destroyChests();
             activeSession.cancelSessionTimeout(); // Hủy tác vụ timeout khi đóng phiên
