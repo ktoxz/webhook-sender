@@ -71,30 +71,30 @@ public class ChestManager {
         inv.clear(); // Xóa tất cả vật phẩm hiện có trong rương
 
         // 1. Kiếm sắt enchant Sharpness II
-        ItemStack ironSword = new ItemStack(Material.IRON_SWORD);
-        ironSword.addEnchantment(Enchantment.SHARPNESS, 2);
-        inv.setItem(0, ironSword); // Đặt vào slot đầu tiên
+        ItemStack sword = new ItemStack(Material.STONE_SWORD);
+        sword.addEnchantment(Enchantment.SHARPNESS, 2);
+        inv.setItem(0, sword); // Đặt vào slot đầu tiên
 
         // 2. Cung enchant Power II
         ItemStack bow = new ItemStack(Material.BOW);
         bow.addEnchantment(Enchantment.POWER, 2);
         inv.setItem(1, bow);
 
-        // 3. 64 mũi tên
-        ItemStack arrows = new ItemStack(Material.ARROW, 64);
+        // 3. 10 mũi tên
+        ItemStack arrows = new ItemStack(Material.ARROW, 10);
         inv.setItem(2, arrows);
 
         // 4. Bộ giáp lưới
-        ItemStack chainHelmet = new ItemStack(Material.CHAINMAIL_HELMET);
+        ItemStack chainHelmet = new ItemStack(Material.IRON_HELMET);
         inv.setItem(3, chainHelmet);
 
-        ItemStack chainChestplate = new ItemStack(Material.CHAINMAIL_CHESTPLATE);
+        ItemStack chainChestplate = new ItemStack(Material.IRON_CHESTPLATE);
         inv.setItem(4, chainChestplate);
 
-        ItemStack chainLeggings = new ItemStack(Material.CHAINMAIL_LEGGINGS);
+        ItemStack chainLeggings = new ItemStack(Material.IRON_LEGGINGS);
         inv.setItem(5, chainLeggings);
 
-        ItemStack chainBoots = new ItemStack(Material.CHAINMAIL_BOOTS);
+        ItemStack chainBoots = new ItemStack(Material.IRON_BOOTS);
         inv.setItem(6, chainBoots);
 
         // 5. 1 Táo vàng
@@ -147,7 +147,7 @@ public class ChestManager {
             loc.getWorld().playSound(loc, Sound.BLOCK_CHEST_CLOSE, 1f, 0.8f); // Âm chest đóng lại
 
             // 3. Nhạc nền chiến đấu
-            player.playSound(player.getLocation(), Sound.MUSIC_DISC_PIGSTEP, SoundCategory.MUSIC, 100f, 1f);
+            player.playSound(player.getLocation(), Sound.MUSIC_END, SoundCategory.MASTER, 1f, 1f);
             // Hoặc chọn nhạc bạn thích: Pigstep (nether music), music intense
 
         }

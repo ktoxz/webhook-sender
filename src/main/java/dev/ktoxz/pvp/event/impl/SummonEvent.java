@@ -66,7 +66,7 @@ public class SummonEvent extends PvpEvent {
             if (world == null) continue;
 
             Shulker shulker = (Shulker) world.spawnEntity(loc, EntityType.SHULKER);
-            makeWeak(shulker);
+            makeCustom(shulker, 4f, 4f, 0f);
             summonedEntities.add(shulker);
         }
     }
@@ -81,8 +81,8 @@ public class SummonEvent extends PvpEvent {
             Bee bee = (Bee) world.spawnEntity(loc, EntityType.BEE);
             Skeleton skeleton = (Skeleton) world.spawnEntity(loc, EntityType.SKELETON);
 
-            makeWeak(bee);
-            makeWeak(skeleton);
+            makeCustom(bee, 4f, 4f, 4f);
+            makeCustom(skeleton, 8f, 8f, 4f);
 
             bee.addPassenger(skeleton);
 
@@ -105,7 +105,7 @@ public class SummonEvent extends PvpEvent {
                     return;
                 }
 
-                for (int i = 0; i < 7 + rand.nextInt(2); i++) {
+                for (int i = 0; i < 7 + rand.nextInt(5); i++) {
                     Location randomLoc = 
                         PvpSessionManager.getActiveSession()
                             .getRandomLocationGround()
@@ -132,11 +132,24 @@ public class SummonEvent extends PvpEvent {
     }
 
     // ===== HỖ TRỢ =====
+    
+    private static void makeCustom(LivingEntity entity, float baseHealth, float health, float atk) {
+        // 1. Đặt máu tối đa và hiện tại
+        entity.getAttribute(Attribute.MAX_HEALTH).setBaseValue(baseHealth);
+        entity.setHealth(health);
 
-    private static void makeWeak(LivingEntity entity) {
-        entity.getAttribute(Attribute.MAX_HEALTH).setBaseValue(4.0);
-        entity.setHealth(4.0);
+        // 2. Đặt damage
+       
+        if (entity.getAttribute(Attribute.ATTACK_DAMAGE) != null && atk != 0f) {
+            entity.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(atk);
+        }
+
+        // 3. Không despawn khi xa người chơi
         entity.setRemoveWhenFarAway(false);
-        ((Lootable) entity).setLootTable(null);
+
+        // 4. Không có loot
+        if (entity instanceof Lootable lootable) {
+            lootable.setLootTable(null);
+        }
     }
 }

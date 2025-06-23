@@ -25,12 +25,12 @@ public class PvpEventManager {
     
     public static void init(Plugin pl) {
         plugin = pl;
-//        registerEvent(new DropEvent(pl));
-//        registerEvent(new EffectEvent(pl));
-//        registerEvent(new FunEvent(pl));
-//        registerEvent(new LightningEvent(pl));
-//        registerEvent(new PitfallTrapEvent(pl));
-//        registerEvent(new ShowerEvent(pl));
+        registerEvent(new DropEvent(pl));
+        registerEvent(new EffectEvent(pl));
+        registerEvent(new FunEvent(pl));
+        registerEvent(new LightningEvent(pl));
+        registerEvent(new PitfallTrapEvent(pl));
+        registerEvent(new ShowerEvent(pl));
         registerEvent(new SummonEvent(pl));
 
     }

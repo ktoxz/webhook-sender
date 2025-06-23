@@ -24,33 +24,37 @@ public class LightningEvent extends PvpEvent{
 
     @Override
     public void trigger(Set<Player> players) {
-        World world = PvpSessionManager.getActiveSession().getRandomLocationInArena().getWorld();
-
-        WeatherType oldWeather = world.hasStorm() ? WeatherType.DOWNFALL : WeatherType.CLEAR;
-
-        world.setStorm(true);
-        broadcastActionBar(players, "[ENVIRONMENT] ⚡ Lightning Storm đang diễn ra!");
-
-        BukkitTask task = new BukkitRunnable() {
-            int count = 0;
-
-            @Override
-            public void run() {
-                if (count >= 10) {
-                    world.setStorm(oldWeather == WeatherType.DOWNFALL);
-                    broadcastActionBar(players, "[ENVIRONMENT] ☀ Trời đã quang trở lại.");
-                    cancel();
-                    return;
-                }
-
-                Location strikeLoc = PvpSessionManager.getActiveSession().getRandomLocationInArena();
-                world.strikeLightning(strikeLoc);
-                count++;
-            }
-        }.runTaskTimer(plugin, 0L, 20L);
-        activeTasks.add(task); // Rút gọn: chỉ cần add thẳng vào activeTasks của lớp cha
+    	showerLightning(players);
     }
 
+    private static void showerLightning(Set<Player> players) {
+    	 World world = PvpSessionManager.getActiveSession().getRandomLocationInArena().getWorld();
+
+         WeatherType oldWeather = world.hasStorm() ? WeatherType.DOWNFALL : WeatherType.CLEAR;
+
+         world.setStorm(true);
+         broadcastActionBar(players, "[ENVIRONMENT] ⚡ Lightning Storm đang diễn ra!");
+
+         BukkitTask task = new BukkitRunnable() {
+             int count = 0;
+
+             @Override
+             public void run() {
+                 if (count >= 10) {
+                     world.setStorm(oldWeather == WeatherType.DOWNFALL);
+                     broadcastActionBar(players, "[ENVIRONMENT] ☀ Trời đã quang trở lại.");
+                     cancel();
+                     return;
+                 }
+
+                 Location strikeLoc = PvpSessionManager.getActiveSession().getRandomLocationInArena();
+                 world.strikeLightning(strikeLoc);
+                 count++;
+             }
+         }.runTaskTimer(plugin, 0L, 20L);
+         activeTasks.add(task);
+    }
+    
     // Không cần onEndMatch() nữa nếu không có logic cụ thể nào khác
     // @Override
     // public void onEndMatch() {

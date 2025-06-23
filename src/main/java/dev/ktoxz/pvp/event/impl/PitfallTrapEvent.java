@@ -69,18 +69,15 @@ public class PitfallTrapEvent extends PvpEvent{
                 broadcastActionBar(players, "[ENVIRONMENT] Đã tắt bẫy Lava!");
             }
         }.runTaskLater(plugin, 20 * 7);
-        activeTasks.add(task); // Rút gọn: chỉ cần add thẳng vào activeTasks của lớp cha
     }
 
     private void iceTrapArea(Set<Player> players) {
         Map<Location, Material> frozenBlocks = new HashMap<>();
-        Random rand = new Random();
 
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 30; i++) {
             Location randomLoc = 
                 PvpSessionManager.getActiveSession()
-                    .getRandomLocationInArena()
-                    .add(0, 20 + rand.nextInt(10), 0)
+                    .getRandomLocationGround()
             ;
 
             Block block = randomLoc.getBlock();
@@ -104,6 +101,5 @@ public class PitfallTrapEvent extends PvpEvent{
                 broadcastActionBar(players, "[ENVIRONMENT] 🌡️ Băng đã tan, sàn đấu trở lại bình thường!");
             }
         }.runTaskLater(plugin, 20 * 7);
-        activeTasks.add(task); // Rút gọn: chỉ cần add thẳng vào activeTasks của lớp cha
     }
 }

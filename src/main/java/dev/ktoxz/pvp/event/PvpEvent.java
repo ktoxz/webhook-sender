@@ -78,6 +78,8 @@ public abstract class PvpEvent {
             return "§a" + message; // Xanh lá
         } else if (message.startsWith("[DEBUFF]")) {
             return "§c" + message; // Đỏ
+        } else if(message.startsWith("[SUMMON]")) {
+            return "§g" + message; // Vàng
         }
         else {
             return "§f" + message; // Trắng mặc định

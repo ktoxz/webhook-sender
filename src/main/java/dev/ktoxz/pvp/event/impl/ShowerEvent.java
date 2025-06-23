@@ -84,7 +84,7 @@ public class ShowerEvent extends PvpEvent {
 
     // === Mưa TNT ===
     private static void customTntRain(Set<Player> players, Plugin plugin) {
-        broadcastActionBar(players, msg("💣 Mưa TNT!"));
+    	broadcastActionBar(players, msg("💣 Mưa TNT!"));
 
         BukkitTask task = new BukkitRunnable() {
             int ticks = 0;
@@ -104,7 +104,7 @@ public class ShowerEvent extends PvpEvent {
                     if (world == null) continue;
 
                     TNTPrimed tnt = (TNTPrimed) world.spawnEntity(loc, EntityType.TNT);
-                    tnt.setFuseTicks(40);
+                    tnt.setFuseTicks(60);
                     tnt.setYield(1.0f);
                     tnt.setIsIncendiary(false);
                 }

@@ -44,7 +44,6 @@ public class Start implements CommandExecutor {
 
         // TODO: Sau đây sẽ thực hiện backup, spawn chest, countdown, start PvP như ta đã làm ở test session.
 
-        PvpSessionManager.getActiveSession().setStarted(true);
         
         PvpSessionManager.getActiveSession().preparePlayersForBattle();
         PvpSessionManager.getActiveSession().startCountdown();
