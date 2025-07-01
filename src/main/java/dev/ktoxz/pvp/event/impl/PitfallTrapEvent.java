@@ -46,50 +46,60 @@ public class PitfallTrapEvent extends PvpEvent{
     // }
 
     private void TrapUnder(Set<Player> players) {
-        Map<Location, Material> originalBlocks = new HashMap<>();
+        Map<Location, Material> lavaBlocks = new HashMap<>();
 
-        for (Player p : players) {
-            Location loc = p.getLocation().clone().subtract(0, 1, 0).getBlock().getLocation();
+        List<Location> locs = PvpSessionManager.getActiveSession().getGround();
+        if (locs == null || locs.isEmpty()) return;
+
+        for (Location loc : locs) {
             Block block = loc.getBlock();
-            originalBlocks.put(loc, block.getType());
-            block.setType(Material.LAVA);
+            if (block.getType() == Material.CHISELED_DEEPSLATE) {
+                lavaBlocks.put(loc, block.getType());
+                block.setType(Material.LAVA);
+            }
         }
 
-        broadcastActionBar(players, "[ENVIRONMENT] Bẫy Lava dưới chân bạn!");
+        if (!lavaBlocks.isEmpty()) {
+            broadcastActionBar(players, "[ENVIRONMENT] 🔥 Bẫy Lava đã được kích hoạt!");
+        }
 
-        BukkitTask task = new BukkitRunnable() {
+        new BukkitRunnable() {
             @Override
             public void run() {
-                for (Map.Entry<Location, Material> entry : originalBlocks.entrySet()) {
+                for (Map.Entry<Location, Material> entry : lavaBlocks.entrySet()) {
                     Block block = entry.getKey().getBlock();
                     if (block.getType() == Material.LAVA) {
                         block.setType(entry.getValue());
                     }
                 }
-                broadcastActionBar(players, "[ENVIRONMENT] Đã tắt bẫy Lava!");
+                if (!lavaBlocks.isEmpty()) {
+                    broadcastActionBar(players, "[ENVIRONMENT] 💧 Đã tắt bẫy Lava!");
+                }
             }
         }.runTaskLater(plugin, 20 * 7);
     }
 
+
+
     private void iceTrapArea(Set<Player> players) {
         Map<Location, Material> frozenBlocks = new HashMap<>();
 
-        for (int i = 0; i < 30; i++) {
-            Location randomLoc = 
-                PvpSessionManager.getActiveSession()
-                    .getRandomLocationGround()
-            ;
+        List<Location> locs = PvpSessionManager.getActiveSession().getGround();
+        if (locs == null || locs.isEmpty()) return;
 
-            Block block = randomLoc.getBlock();
-            if (!frozenBlocks.containsKey(randomLoc) && block.getType().isSolid()) {
-                frozenBlocks.put(randomLoc, block.getType());
+        for (Location loc : locs) {
+            Block block = loc.getBlock();
+            if (block.getType() == Material.CHISELED_DEEPSLATE) {
+                frozenBlocks.put(loc, block.getType());
                 block.setType(Material.PACKED_ICE);
             }
         }
 
-        broadcastActionBar(players, "[ENVIRONMENT] 🧊 Bẫy băng giá đã đóng băng sàn đấu!");
+        if (!frozenBlocks.isEmpty()) {
+            broadcastActionBar(players, "[ENVIRONMENT] 🧊 Bẫy băng giá đã đóng băng sàn đấu!");
+        }
 
-        BukkitTask task = new BukkitRunnable() {
+        new BukkitRunnable() {
             @Override
             public void run() {
                 for (Map.Entry<Location, Material> entry : frozenBlocks.entrySet()) {
@@ -98,8 +108,11 @@ public class PitfallTrapEvent extends PvpEvent{
                         block.setType(entry.getValue());
                     }
                 }
-                broadcastActionBar(players, "[ENVIRONMENT] 🌡️ Băng đã tan, sàn đấu trở lại bình thường!");
+                if (!frozenBlocks.isEmpty()) {
+                    broadcastActionBar(players, "[ENVIRONMENT] 🌡️ Băng đã tan, sàn đấu trở lại bình thường!");
+                }
             }
-        }.runTaskLater(plugin, 20 * 7);
+        }.runTaskLater(plugin, 20 * 7); // 7 giây sau
     }
+
 }

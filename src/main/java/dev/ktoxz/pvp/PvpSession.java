@@ -20,13 +20,14 @@ import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.domains.DefaultDomain;
-import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.managers.storage.StorageException;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 
 import dev.ktoxz.manager.TeleportManager;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import dev.ktoxz.manager.EffectManager;
 
 import java.util.*;
@@ -145,6 +146,11 @@ public class PvpSession {
     public void broadcast(String message) {
         players.forEach(p -> p.sendMessage(message));
     }
+    
+    public void broadcastToAll(String message) {
+    	Bukkit.broadcastMessage("§6[PvP] §f" + message);
+    }
+
 
     public void preparePlayersForBattle() {
         if (currentState != PvpSessionState.WAITING) {
@@ -261,6 +267,7 @@ public class PvpSession {
                     setState(PvpSessionState.STARTED);
                     destroyChests();
                     broadcast("§cBẮT ĐẦU PvP!");
+                    broadcastToAll("Người chơi bên ngoài có thể xem trận đấu bằng lệnh §a /watch");
                     startRandomEvents();
                     cancel();
                     plugin.getLogger().info("PvP countdown finished. Session started.");
@@ -313,7 +320,7 @@ public class PvpSession {
 
                 PvpEventManager.triggerRandomEvent(players);
             }
-        }.runTaskTimer(plugin, 20 * 10L, 20 * 5L);
+        }.runTaskTimer(plugin, 20 * 10L, 20 * (10L + new Random().nextInt(2)));
         plugin.getLogger().info("[PvpSession] Tác vụ sự kiện ngẫu nhiên đã bắt đầu");
     }
 
@@ -440,10 +447,15 @@ public class PvpSession {
                     broadcast("§cPhiên PvP đã hết thời gian chờ và tự động đóng.");
                     PvpSessionManager.closeSession();
                     plugin.getLogger().info("PvP session timed out and closed.");
+                    for(Player p: invitedPlayers) {
+                        p.sendMessage("§cPhiên PvP đã hết thời gian chờ và tự động đóng.");
+
+                    }
+                
                 }
             }
         }.runTaskLater(plugin, 20L * 180);
-        plugin.getLogger().info("Session timeout task started (3 minutes).");
+       
     }
 
     public void cancelSessionTimeout() {
@@ -582,35 +594,42 @@ public class PvpSession {
             return;
         }
 
-        World world = Bukkit.getWorld("world");
-        if (world == null) {
-            plugin.getLogger().warning("[PvpSession] World 'world' không tồn tại.");
-            return;
-        }
-
-        List<Document> audienceSpots = chosenArena.getList("audience", Document.class);
-        if (audienceSpots.isEmpty()) return;
-
-        Random rand = new Random();
-
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (players.contains(player)) continue; // Người đang thi đấu
 
             Location loc = player.getLocation();
             BlockVector3 bv = BukkitAdapter.asBlockVector(loc);
 
-            if (activeRegion.contains(bv)) { // ✅ Cách đúng với WG 7+
-                Document spot = audienceSpots.get(rand.nextInt(audienceSpots.size()));
-                int x = spot.getInteger("x");
-                int y = spot.getInteger("y");
-                int z = spot.getInteger("z");
-
-                Location target = new Location(world, x + 0.5, y, z + 0.5);
-                player.teleport(target);
-                player.sendMessage("§eBạn đã được chuyển ra ngoài đấu trường.");
+            if (activeRegion.contains(bv)) {
+                teleportToWatch(player);
                 plugin.getLogger().info("[PvpSession] Đã chuyển outsider " + player.getName() + " đến audience.");
             }
         }
+    }
+
+    
+    public void teleportToWatch(Player player) {
+        if (chosenArena == null || !chosenArena.containsKey("audience")) return;
+
+        List<Document> audienceSpots = chosenArena.getList("audience", Document.class);
+        if (audienceSpots == null || audienceSpots.isEmpty()) return;
+
+        World world = Bukkit.getWorld("world");
+        if (world == null) {
+            plugin.getLogger().warning("[PvpSession] World 'world' không tồn tại.");
+            return;
+        }
+
+        Random rand = new Random();
+        Document spot = audienceSpots.get(rand.nextInt(audienceSpots.size()));
+
+        int x = spot.getInteger("x");
+        int y = spot.getInteger("y");
+        int z = spot.getInteger("z");
+
+        Location target = new Location(world, x + 0.5, y, z + 0.5);
+        player.teleport(target);
+        player.sendMessage("§eBạn đã được chuyển ra ngoài đấu trường.");
     }
 
 
@@ -735,7 +754,50 @@ public class PvpSession {
         int y = world.getHighestBlockYAt(x, z);
         return new Location(world, x + 0.5, y, z + 0.5);
     }
+    
+    public List<Location> getGround() {
+        if (arenaRegionName == null) {
+            plugin.getLogger().warning("Tên region chưa được đặt.");
+            return null;
+        }
 
+        World world = Bukkit.getWorld("world"); // "world" là tên mặc định của overworld
+        if (world == null) {
+            plugin.getLogger().warning("Không tìm thấy thế giới 'world' (overworld).");
+            return null;
+        }
+
+        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+        RegionManager regionManager = container.get(BukkitAdapter.adapt(world));
+
+        if (regionManager == null || !regionManager.hasRegion(arenaRegionName)) {
+            plugin.getLogger().warning("Region không tồn tại: " + arenaRegionName);
+            return null;
+        }
+
+        ProtectedRegion region = regionManager.getRegion(arenaRegionName);
+        BlockVector3 min = region.getMinimumPoint();
+        BlockVector3 max = region.getMaximumPoint();
+
+        List<Location> validLocations = new ArrayList<>();
+
+        for (int x = min.getBlockX(); x <= max.getBlockX(); x++) {
+            for (int z = min.getBlockZ(); z <= max.getBlockZ(); z++) {
+                int y = world.getHighestBlockYAt(x, z);
+                Location loc = new Location(world, x + 0.5, y, z + 0.5);
+
+                // Kiểm tra block có thể đứng được không
+                Material type = loc.clone().subtract(0, 1, 0).getBlock().getType();
+                if (type.isSolid()) {
+                    validLocations.add(loc);
+                }
+            }
+        }
+
+        return validLocations;
+    }
+
+    
     public Location getRandomLocationInArena() {
         if (arenaMinLoc == null || arenaMaxLoc == null) {
             plugin.getLogger().warning("Không thể lấy vị trí ngẫu nhiên: Arena bounds chưa được đặt.");

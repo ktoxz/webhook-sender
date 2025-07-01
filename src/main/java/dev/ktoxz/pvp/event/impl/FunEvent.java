@@ -94,7 +94,7 @@ public class FunEvent extends PvpEvent{
                 broadcastActionBar(players, "[FUN] 💥 Cuộc xâm lăng của gà đã kết thúc!");
             }
         }.runTaskLater(plugin, delaySeconds * 20L);
-        activeTasks.add(task); // Rút gọn: chỉ cần add thẳng vào activeTasks của lớp cha
+         // Rút gọn: chỉ cần add thẳng vào activeTasks của lớp cha
     }
 
     private static void fireworkShow(Set<Player> players) { // Giữ static vì không cần activeTasks ở đây

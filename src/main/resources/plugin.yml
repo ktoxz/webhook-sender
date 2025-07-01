@@ -1,4 +1,4 @@
-name: KtoxzPlugin
+name: KtoxzWebhook
 main: dev.ktoxz.main.KtoxzWebhook
 version: 1.2.6
 api-version: 1.20
@@ -72,6 +72,12 @@ commands:
     permission: ktoxz.addArenaSpot
     permission-message: Bạn không có quyền sử dụng lệnh này!
 
+  watch:
+    description: Dùng để dịch chuyển tới trận đấu đang diễn ra
+    usage: /watch
+    permission: ktoxz.watch
+    permission-message: Bạn không có quyền sử dụng lệnh này!
+
 permissions:
   ktoxz.setcentralchest:
     description: Cho phép đặt rương trung tâm
@@ -95,4 +101,8 @@ permissions:
 
   ktoxz.tp:
     description: quyền teleport
+    default: true
+  
+  ktoxz.watch:
+    description: quyền xem
     default: true

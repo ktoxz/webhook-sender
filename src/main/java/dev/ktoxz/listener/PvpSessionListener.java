@@ -6,6 +6,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.Material;
@@ -204,4 +205,49 @@ public class PvpSessionListener implements Listener {
         RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
         return container.get(BukkitAdapter.adapt(world));
     }
+    
+    @EventHandler
+    public void onPlayerTeleport(PlayerTeleportEvent event) {
+        Player player = event.getPlayer();
+
+        PvpSession session = PvpSessionManager.getSession(player);
+        if (session == null || !session.isCountdownPhase()) return;
+
+        String arenaRegionName = session.getArenaRegionName();
+        if (arenaRegionName == null) return;
+
+        RegionManager regionManager = getRegionManager(event.getTo().getWorld());
+        if (regionManager == null) return;
+
+        ProtectedRegion arenaRegion = regionManager.getRegion(arenaRegionName);
+        if (arenaRegion == null) return;
+
+        BlockVector3 destination = BlockVector3.at(
+            event.getTo().getBlockX(),
+            event.getTo().getBlockY(),
+            event.getTo().getBlockZ()
+        );
+
+        if (!arenaRegion.contains(destination)) {
+            event.setCancelled(true);
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR,
+                new TextComponent("§cKhông thể dịch chuyển ra ngoài đấu trường PvP!"));
+            return;
+        }
+
+        // ⛔ Ngăn cầm item trên con trỏ khi PvP đang diễn ra
+        if (session.isCountdownPhase() || session.isStarted()) {
+            ItemStack cursorItem = player.getItemOnCursor();
+            if (cursorItem != null && cursorItem.getType() != Material.AIR) {
+                player.setItemOnCursor(null);
+                player.getInventory().addItem(cursorItem);
+                player.spigot().sendMessage(ChatMessageType.ACTION_BAR,
+                    new TextComponent("§cBạn không thể giữ vật phẩm trên tay khi đang PvP! Vật phẩm đã được trả lại kho."));
+            }
+        }
+        player.closeInventory();
+    }
+
+
+
 }

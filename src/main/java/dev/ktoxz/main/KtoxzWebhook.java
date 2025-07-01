@@ -44,6 +44,8 @@ public class KtoxzWebhook extends JavaPlugin {
         getCommand("addArena").setExecutor(new AddArena(this));
         getCommand("addArenaSpot").setExecutor(new AddArenaSpot(this));
 
+        getCommand("watch").setExecutor(new Watch(this));
+
         // Đăng ký listener
         Bukkit.getPluginManager().registerEvents(new ChestListener(this), this);
         Bukkit.getPluginManager().registerEvents(new PvpSessionListener(this), this);

@@ -8,6 +8,8 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
 import org.bukkit.loot.Lootable;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -130,6 +132,39 @@ public class SummonEvent extends PvpEvent {
         }.runTaskTimer(plugin, 0L, 20L);
         activeTasks.add(task); // Rút gọn
     }
+    
+    private static void summonInvisibleCreaking(Set<Player> players, List<Entity> summonedEntities) {
+        broadcastActionBar(players, "[SUMMON] 👻 Hai Creeper tàng hình đã xuất hiện!");
+
+        for (int i = 0; i < 2; i++) {
+            Location loc = PvpSessionManager.getActiveSession().getRandomLocationGround();
+            World world = loc.getWorld();
+            if (world == null) continue;
+
+            Creeper creaking = (Creeper) world.spawnEntity(loc, EntityType.CREAKING);
+
+            makeCustom(creaking, 20f, 20f, 6f); // Máu cao hơn bình thường một chút
+
+            // Cho tàng hình trong 5 giây
+            creaking.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 20 * 5, 1, false, false, false));
+
+            summonedEntities.add(creaking);
+        }
+
+        // Sau 10 giây thì remove
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Entity e : new ArrayList<>(summonedEntities)) {
+                    if (e instanceof Creeper && !e.isDead()) {
+                        e.remove();
+                        summonedEntities.remove(e);
+                    }
+                }
+            }
+        }.runTaskLater(plugin, 20 * 10);
+    }
+
 
     // ===== HỖ TRỢ =====
     

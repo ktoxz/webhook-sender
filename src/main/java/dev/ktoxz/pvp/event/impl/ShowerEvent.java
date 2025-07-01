@@ -69,7 +69,7 @@ public class ShowerEvent extends PvpEvent {
 
                 int amount = rand.nextInt(maxPerTick - minPerTick + 1) + minPerTick;
                 for (int i = 0; i < amount; i++) {
-                    Location loc = PvpSessionManager.getActiveSession().getRandomLocationInArena().add(0, 20 + rand.nextInt(10), 0);
+                    Location loc = PvpSessionManager.getActiveSession().getRandomLocationInArena().add(0, 10 + rand.nextInt(5), 0);
                     World world = loc.getWorld();
                     if (world == null) continue;
 
@@ -99,7 +99,7 @@ public class ShowerEvent extends PvpEvent {
 
                 int count = 1 + rand.nextInt(3);
                 for (int i = 0; i < count; i++) {
-                    Location loc = PvpSessionManager.getActiveSession().getRandomLocationInArena().add(0, 20 + rand.nextInt(5), 0);
+                    Location loc = PvpSessionManager.getActiveSession().getRandomLocationInArena().add(0, 10 + rand.nextInt(5), 0);
                     World world = loc.getWorld();
                     if (world == null) continue;
 
@@ -131,7 +131,7 @@ public class ShowerEvent extends PvpEvent {
 
                 int fireballs = 2 + rand.nextInt(4);
                 for (int i = 0; i < fireballs; i++) {
-                    Location loc = PvpSessionManager.getActiveSession().getRandomLocationInArena().add(0, 28 + rand.nextInt(5), 0);
+                    Location loc = PvpSessionManager.getActiveSession().getRandomLocationInArena().add(0, 12 + rand.nextInt(5), 0);
                     Fireball fb = loc.getWorld().spawn(loc, Fireball.class);
                     fb.setVelocity(new Vector(0, -1, 0));
                     fb.setIsIncendiary(true);
@@ -169,7 +169,7 @@ public class ShowerEvent extends PvpEvent {
 
                 int amount = 3 + rand.nextInt(4); // 3–6 bình mỗi lần
                 for (int i = 0; i < amount; i++) {
-                    Location loc = PvpSessionManager.getActiveSession().getRandomLocationInArena().add(0, 25 + rand.nextInt(5), 0);
+                    Location loc = PvpSessionManager.getActiveSession().getRandomLocationInArena().add(0, 13 + rand.nextInt(3), 0);
                     World world = loc.getWorld();
 
                     org.bukkit.inventory.ItemStack potionItem = new org.bukkit.inventory.ItemStack(org.bukkit.Material.SPLASH_POTION);
